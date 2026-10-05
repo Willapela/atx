@@ -907,6 +907,14 @@ app.get('/dashboard', requireAuth, requireActivePlan, (req, res) => {
     const apkRelative = `/apks/${encodeURIComponent(user.username)}/app.apk`;
     const apkPath = path.join(APK_DIR, user.username, 'app.apk');
     const hasApk = fs.existsSync(apkPath);
+    // The dashboard embeds configStr inside a <script>. Escape HTML-sensitive
+    // characters so user HTML containing </script> cannot terminate that script.
+    const configStr = JSON.stringify(parseUserConfig(user), null, 2)
+        .replace(/</g, '\\u003c')
+        .replace(/>/g, '\\u003e')
+        .replace(/&/g, '\\u0026')
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029');
     res.render('dashboard', {
         user: {
             ...req.user,
@@ -915,7 +923,7 @@ app.get('/dashboard', requireAuth, requireActivePlan, (req, res) => {
             created_at: user.created_at || null,
             isAdmin: isAdminUser(user)
         },
-        configStr: JSON.stringify(parseUserConfig(user), null, 2),
+        configStr,
         appUrl: `${hostUrl}/atx/config`,
         appUpdateUrl: `${hostUrl}/${encodeURIComponent(user.username)}/appupdate`,
         smsUrl: `${hostUrl}/${encodeURIComponent(user.username)}/sms`,
