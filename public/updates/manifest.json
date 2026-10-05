@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "resources": {
+    "appupdate": "/appupdate",
+    "config": "/config",
+    "sms": "/sms",
+    "theme": "/theme"
+  }
+}

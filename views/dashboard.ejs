@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATX TUNNEL · ATX Config Panel</title>
+    <link rel="icon" type="image/svg+xml" href="/atx-mark.svg">
+    <link rel="alternate icon" type="image/svg+xml" href="/atx-mark.svg">
+    <link rel="apple-touch-icon" href="/atx-mark.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/clean-theme.css">
+    <script src="/vendor/vue.global.prod.js"></script>
+    <style>
+        [v-cloak] { display: none !important; }
+        .color-control {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface-3, #f8f9fb);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .color-control label {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+        .color-control input[type="color"] {
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 0;
+            background: transparent;
+        }
+        .section-title {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin: 1.5rem 0 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+        <button class="menu-toggle mobile-menu-left" onclick="toggleSidebar()" aria-label="Abrir menu">☰</button>
+        <div class="brand"><img class="brand-logo-image" src="/atx-mark.svg" alt="Logo ATX TUNNEL"><span>ATX TUNNEL</span></div>
+        <span class="mobile-header-spacer" aria-hidden="true"></span>
+    </header>
+
+    <div id="app" v-cloak style="display: flex; width: 100%;">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="brand" style="justify-content: space-between;">
+                <div class="brand-name"><img class="brand-logo-image" src="/atx-mark.svg" alt="Logo ATX TUNNEL"><span>ATX TUNNEL</span></div>
+                <button class="menu-toggle" style="display: none; padding-right:0;" onclick="toggleSidebar()" id="closeMenuBtn">✖</button>
+            </div>
+            
+            <div class="menu-label">Painel de controle</div>
+            <nav class="nav-menu">
+                <div class="nav-item" :class="{active: activeMenu === 'dashboard'}" @click="setMenu('dashboard')">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19V5M4 19h16M8 16v-5M12 16V7M16 16v-8M20 16v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Visão Geral</span>
+                </div>
+                <div class="nav-item" :class="{active: activeMenu === 'general'}" @click="setMenu('general')">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6Z" stroke="currentColor" stroke-width="1.8"/><path d="m19.3 13.5 1.1.8-1.7 2.9-1.3-.5a7.8 7.8 0 0 1-1.8 1l-.2 1.4h-3.4l-.2-1.4a7.8 7.8 0 0 1-1.8-1l-1.3.5-1.7-2.9 1.1-.8a7.2 7.2 0 0 1 0-2.1l-1.1-.8 1.7-2.9 1.3.5a7.8 7.8 0 0 1 1.8-1l.2-1.4h3.4l.2 1.4a7.8 7.8 0 0 1 1.8 1l1.3-.5 1.7 2.9-1.1.8a7.2 7.2 0 0 1 0 2.1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></span><span>Configurações Gerais</span>
+                </div>
+                <div class="nav-item" :class="{active: activeMenu === 'layout'}" @click="setMenu('layout')">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4.2a7.8 7.8 0 1 0 0 15.6h1.2a1.9 1.9 0 0 0 0-3.8h-.8a1.8 1.8 0 0 1 0-3.6h2.8a5.6 5.6 0 0 0 5.6-5.6A7.8 7.8 0 0 0 12 4.2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="7.8" cy="10" r=".8" fill="currentColor"/><circle cx="10.3" cy="7.2" r=".8" fill="currentColor"/><circle cx="14" cy="7" r=".8" fill="currentColor"/></svg></span><span>Layout e Cores</span>
+                </div>
+                <div class="nav-item" :class="{active: activeMenu === 'servers'}" @click="setMenu('servers')">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="11" rx="1.8" stroke="currentColor" stroke-width="1.8"/><path d="M8 20h8M12 16v4M8 9h.01M11 9h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><span>Servidores</span>
+                </div>
+                <div class="nav-item" :class="{active: activeMenu === 'profile'}" @click="setMenu('profile')">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 19.2a6.5 6.5 0 0 1 13 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><span>Meu Perfil</span>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-profile" style="cursor:pointer;" @click="setMenu('profile')">
+                    <div class="avatar"><%= user.username.charAt(0).toUpperCase() %></div>
+                    <div>
+                        <div style="font-weight: 600; color: var(--text-primary);"><%= user.username %></div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);"><%= user.email || 'Sem e-mail' %></div>
+                        <div style="font-size: 0.68rem; color: #1d4ed8; margin-top: .25rem; word-break: break-all;" title="UUID de atualização">UUID: <%= user.updateUuid %></div>
+                    </div>
+                </div>
+                <a href="/logout" class="btn danger full-width small" style="margin-top: 0.5rem;">Sair</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- Dashboard Section -->
+            <div v-show="activeMenu === 'dashboard'">
+                <div class="page-header">
+                    <div class="eyebrow">CENTRAL DE CONTROLE</div><h1 class="page-title">Visão Geral</h1>
+                    <p class="text-muted">Gerencie servidores, aparência e publicação do ATX TUNNEL.</p>
+                </div>
+                
+                <div class="glass-container config-card" style="margin-bottom: 2rem;">
+                    <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Endpoint de configuração ATX</h3>
+                    <p class="text-muted" style="margin-bottom: 1rem;">Use esta única URL no ATX TUNNEL para buscar servidores, tema e configurações publicadas.</p>
+                    <div class="url-box" style="margin-bottom: .75rem;">
+                        <input type="text" readonly value="<%= appUrl %>" id="atxConfigUrl">
+                        <button onclick="copySpecificUrl('atxConfigUrl')" class="btn secondary">Copiar URL</button>
+                    </div>
+                    <p class="text-muted" style="margin: .5rem 0 0;">A URL permanece estável; as alterações feitas no painel aparecem no próximo carregamento do app.</p>
+                </div>
+
+                <div class="overview-status-grid">
+                    <div class="status-summary-card status-summary-config">
+                        <div class="status-summary-top"><span class="status-summary-label">CONFIGURAÇÃO</span><span class="status-summary-dot"></span></div>
+                        <strong class="status-summary-value">v{{ config.Version }}</strong>
+                        <span class="status-summary-detail">{{ config.Servers.length }} servidor{{ config.Servers.length === 1 ? '' : 'es' }} publicado{{ config.Servers.length === 1 ? '' : 's' }}</span>
+                    </div>
+                    <div class="status-summary-card status-summary-theme">
+                        <div class="status-summary-top"><span class="status-summary-label">TEMA</span><span class="status-summary-dot"></span></div>
+                        <strong class="status-summary-value">v{{ config.Theme.Version }}</strong>
+                        <span class="status-summary-detail">Layout e cores sincronizados</span>
+                    </div>
+                </div>
+
+                <div class="overview-sync-card" :class="{pending: hasPendingChanges}">
+                    <div class="overview-sync-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="M20 7v5h-5M4 17v-5h5M5.3 9A7 7 0 0 1 17.7 6.2L20 8M4 16l2.3 1.8A7 7 0 0 0 18.7 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div class="overview-sync-copy">
+                        <strong>{{ hasPendingChanges ? 'Alterações pendentes' : 'Tudo sincronizado' }}</strong>
+                        <span>{{ hasPendingChanges ? 'Salve para publicar as mudanças deste painel.' : 'As configurações publicadas estão em dia.' }}</span>
+                    </div>
+                    <span class="overview-sync-state">{{ hasPendingChanges ? 'Aguardando salvamento' : 'Sincronizado' }}</span>
+                </div>
+
+            </div>
+
+            <!-- General Section -->
+            <div v-show="activeMenu === 'general'">
+                <div class="page-header">
+                    <div class="eyebrow">CONFIGURAÇÃO GLOBAL</div><h1 class="page-title">Configurações Gerais</h1>
+                    <p class="text-muted">Configurações globais do aplicativo.</p>
+                </div>
+                
+                <div class="glass-container config-card">
+                    <div class="card-grid form-grid-2">
+                        <div class="form-group">
+                            <label>Versão da configuração (automática)</label>
+                            <input type="text" :value="config.Version" readonly style="background-color: #f4f5f7; color: #6b7480; cursor: not-allowed;">
+                            <small class="text-muted">A versão sobe automaticamente quando configurações gerais ou servidores mudarem.</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Porta UDP padrão</label>
+                            <input type="text" v-model="config.UdpPort" placeholder="7300">
+                        </div>
+                        <div class="form-group">
+                            <label>Contato</label>
+                            <input type="url" v-model="config.Contato" placeholder="https://t.me/seu_canal">
+                        </div>
+                        <div class="form-group">
+                            <label>Link externo</label>
+                            <input type="url" v-model="config.Site" placeholder="https://www.speedtest.net">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>URL da configuração</label>
+                            <input type="text" value="<%= appUrl %>" readonly style="background-color: #f4f5f7; color: #6b7480; cursor: not-allowed;">
+                            <small class="text-muted">Gerada automaticamente para o seu usuário e entregue no formato ATX TUNNEL.</small>
+                        </div>
+                    </div>
+                    <p class="text-muted" style="margin-top: 1rem;">As alterações serão gravadas pelo botão <strong>Salvar Configurações</strong> na barra inferior.</p>
+                </div>
+
+
+            </div>
+
+            <!-- Layout Section -->
+            <div v-show="activeMenu === 'layout'">
+                <div class="page-header">
+                    <div class="eyebrow">IDENTIDADE VISUAL</div><h1 class="page-title">Layout e Cores</h1>
+                    <p class="text-muted">Personalize links, imagens e cores do aplicativo.</p>
+                </div>
+                
+                <div class="glass-container config-card">
+                    <h3 class="section-title" style="margin-top:0;">Tema do aplicativo ATX TUNNEL</h3>
+                    <p class="text-muted">Estrutura compatível com o tema enviado para o ATX TUNNEL.</p>
+                    <div class="card-grid">
+                        <div class="form-group"><label>Nome do aplicativo</label><input type="text" v-model="config.Theme.AppName" readonly value="ATX TUNNEL" style="background-color: #f4f5f7; color: #9aa3b2; cursor: not-allowed;"></div>
+                        <div class="form-group"><label>Versão do tema</label><input type="number" min="1" step="1" v-model.number="config.Theme.Version"><small class="text-muted">Editável. Se o conteúdo do tema mudar sem alterar este número, ele também sobe automaticamente.</small></div>
+                        <div class="form-group"><label>Imagem de fundo</label><input type="url" v-model="config.Theme.ImgFundo"></div>
+                        <div class="form-group"><label>Logo</label><input type="url" v-model="config.Theme.ImgLogo"></div>
+                        <div class="form-group"><label>Banner</label><input type="url" v-model="config.Theme.ImgBanner"></div>
+                        <div class="form-group"><label>Imagem do menu</label><input type="url" v-model="config.Theme.ImgMenu"></div>
+                        <div class="form-group"><label>Imagem dos logs</label><input type="url" v-model="config.Theme.ImgLogs"></div>
+                        <div class="form-group"><label>Imagem de check</label><input type="url" v-model="config.Theme.ImgCheck"></div>
+                        <div class="form-group"><label>Imagem do usuário</label><input type="url" v-model="config.Theme.ImgUser"></div>
+                        <div class="form-group"><label>Imagem da senha</label><input type="url" v-model="config.Theme.ImgPass"></div>
+                        <div class="form-group"><label>Imagem de atualização</label><input type="url" v-model="config.Theme.ImgUpdate"></div>
+                        <div class="form-group"><label>ColorOne</label><input type="text" v-model="config.Theme.ColorOne"></div>
+                        <div class="form-group"><label>ColorTwo</label><input type="text" v-model="config.Theme.ColorTwo"></div>
+                        <div class="form-group"><label>ColorStarter</label><input type="text" v-model="config.Theme.ColorStarter"></div>
+                        <div class="form-group"><label>ColorDialogs</label><input type="text" v-model="config.Theme.ColorDialogs"></div>
+                        <div class="form-group"><label>ColorButtons</label><input type="text" v-model="config.Theme.ColorButtons"></div>
+                    </div>
+                    <p class="text-muted" style="margin-top: 1rem;">O tema será salvo pelo botão <strong>Salvar Configurações</strong> na barra inferior.</p>
+                </div>
+            </div>
+
+<!-- Servers Section -->
+<div v-show="activeMenu === 'servers'">
+    <div class="page-header servers-header">
+        <div>
+            <div class="eyebrow">ATX TUNNEL</div>
+            <h1 class="page-title">Servidores</h1>
+            <p class="text-muted">
+                {{ config.Servers.length }} servidor{{ config.Servers.length === 1 ? '' : 'es' }} configurado{{ config.Servers.length === 1 ? '' : 's' }}
+            </p>
+        </div>
+        <div class="servers-actions">
+            <button type="button" class="btn primary servers-add-btn" @click="addServer">
+                ＋ Novo Servidor
+            </button>
+            <div class="servers-io-row">
+                <button type="button" class="btn secondary" @click="exportConfig">⬇ Exportar</button>
+                <label class="btn secondary servers-import-btn">
+                    ⬆ Importar
+                    <input type="file" accept="application/json,.json" @change="importConfig">
+                </label>
+            </div>
+            <span v-if="importMsg" class="servers-import-msg">{{ importMsg }}</span>
+        </div>
+    </div>
+
+    <div class="servers-grid" v-if="config.Servers.length">
+        <div
+            class="server-card"
+            v-for="(srv, index) in config.Servers"
+            :key="index"
+            @click="editItem('Servers', index)"
+        >
+            <div class="server-card-top">
+                <div class="server-card-flag" v-if="srv.FLAG">
+                    <img :src="srv.FLAG" alt="" @error="$event.target.style.display='none'">
+                </div>
+                <div class="server-card-flag server-card-flag-fallback" v-else>
+                    {{ (srv.Name || 'S').charAt(0).toUpperCase() }}
+                </div>
+
+                <div class="server-card-main">
+                    <div class="server-card-name">{{ srv.Name || 'Servidor Sem Nome' }}</div>
+                    <div class="server-card-desc" v-if="srv.Description">{{ srv.Description }}</div>
+                </div>
+
+                <span class="server-mode-badge" :class="'mode-' + (srv.Info || 'Tlsws').toLowerCase()">
+                    {{ srv.Info || srv.TYPE || 'Tlsws' }}
+                </span>
+            </div>
+
+            <div class="server-card-meta">
+                <div class="server-meta-item">
+                    <span class="server-meta-label">Host</span>
+                    <code>{{ srv.ServerIP || '—' }}:{{ srv.ServerPort || '—' }}</code>
+                </div>
+                <div class="server-meta-item" v-if="srv.SNI">
+                    <span class="server-meta-label">SNI</span>
+                    <code>{{ srv.SNI }}</code>
+                </div>
+                <div class="server-meta-item" v-if="srv.ProxyIP">
+                    <span class="server-meta-label">Proxy</span>
+                    <code>{{ srv.ProxyIP }}{{ srv.ProxyPort ? ':' + srv.ProxyPort : '' }}</code>
+                </div>
+            </div>
+
+            <div class="server-card-footer">
+                <div class="server-tags">
+                    <span class="server-tag" v-if="srv.USER">Usuário</span>
+                    <span class="server-tag" v-if="srv.Payload">Payload</span>
+                    <span class="server-tag" v-if="srv.CheckUser">Check</span>
+                    <span class="server-tag muted" v-if="!srv.ServerIP">Sem IP</span>
+                </div>
+                <button
+                    class="action-icon-btn danger"
+                    @click.stop="removeServer(index)"
+                    title="Excluir servidor"
+                >✖</button>
+            </div>
+        </div>
+    </div>
+
+    <div v-else class="servers-empty">
+        <div class="servers-empty-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" width="40" height="40">
+                <rect x="4" y="5" width="16" height="11" rx="1.8" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M8 20h8M12 16v4M8 9h.01M11 9h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+        </div>
+        <h3>Nenhum servidor ainda</h3>
+        <p class="text-muted">Adicione o primeiro servidor para o app começar a usar sua configuração.</p>
+        <button type="button" class="btn primary" @click="addServer">＋ Adicionar servidor</button>
+    </div>
+
+    <p class="text-muted servers-save-hint">
+        Os servidores são salvos junto com as demais alterações pelo botão <strong>Salvar alterações</strong> na barra inferior.
+    </p>
+</div>
+            <!-- Profile Section -->
+            <div v-show="activeMenu === 'profile'">
+                <div class="page-header">
+                    <div class="eyebrow">CONTA</div>
+                    <h1 class="page-title">Meu Perfil</h1>
+                    <p class="text-muted">Gerencie e-mail e senha da sua conta.</p>
+                </div>
+
+                <div class="glass-container config-card">
+                    <div class="card-grid form-grid-2">
+                        <div class="form-group">
+                            <label>Usuário</label>
+                            <input type="text" :value="profile.username" readonly style="background-color: #f4f5f7; color: #6b7480; cursor: not-allowed;">
+                            <small class="text-muted">O usuário não pode ser alterado (faz parte da URL da config).</small>
+                        </div>
+                        <div class="form-group">
+                            <label>E-mail</label>
+                            <input type="email" v-model="profile.email" placeholder="voce@email.com">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>UUID de atualização</label>
+                            <div class="url-box">
+                                <input type="text" :value="profile.updateUuid" id="profileUpdateUuid" readonly style="background-color: #f4f5f7; color: #6b7480; cursor: not-allowed;">
+                                <button type="button" class="btn secondary" onclick="copySpecificUrl('profileUpdateUuid')">Copiar</button>
+                            </div>
+                            <small class="text-muted">Use este UUID no aplicativo para resolver todas as atualizações deste painel. Regenerar invalida o UUID anterior.</small>
+                            <div style="margin-top:.65rem;">
+                                <button type="button" class="btn danger small" :disabled="profileSaving" @click="regenerateUpdateUuid">Gerar novo UUID</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Senha atual</label>
+                            <input type="password" v-model="profile.currentPassword" placeholder="••••••••" autocomplete="current-password">
+                            <small class="text-muted">Obrigatória só se for trocar a senha.</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Nova senha</label>
+                            <input type="password" v-model="profile.newPassword" placeholder="••••••••" autocomplete="new-password">
+                            <small class="text-muted">Mínimo 6 caracteres. Deixe em branco para não alterar.</small>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem; display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
+                        <button class="btn primary" :disabled="profileSaving" @click="saveProfile">
+                            {{ profileSaving ? 'Salvando...' : 'Salvar perfil' }}
+                        </button>
+                        <span v-if="profileMsg" style="color:#059669; font-weight:600;">{{ profileMsg }}</span>
+                        <span v-if="profileError" style="color:#dc2626; font-weight:600;">{{ profileError }}</span>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Modal for Editing Server/Network -->
+            <div class="modal-overlay" v-if="modal.isOpen" @click.self="closeModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Configuração de Servidor</h3>
+                        <button class="modal-close" @click="closeModal">✖</button>
+                    </div>
+                    <div class="modal-body">
+                        
+                        <!-- Server Edit Fields -->
+                        <div v-if="modal.type === 'Servers' && config.Servers[modal.index]" class="server-form">
+                            <div class="form-group">
+                                <label>Modo de conexão</label>
+                                <select v-model="config.Servers[modal.index].Info" @change="onConnectionModeChange">
+                                    <option v-for="mode in connectionModes" :key="mode" :value="mode">{{ mode }}</option>
+                                </select>
+                                <div class="text-muted" style="margin-top: .5rem; line-height: 1.45;">
+                                    {{ modeDescriptions[config.Servers[modal.index].Info] }}
+                                </div>
+                            </div>
+                            <div class="form-group grid-col-2">
+                                <div>
+                                    <label>Nome</label>
+                                    <input type="text" v-model="config.Servers[modal.index].Name" placeholder="WILL">
+                                </div>
+                                <div>
+                                    <label>Descrição</label>
+                                    <input type="text" v-model="config.Servers[modal.index].Description" placeholder="T1M 01">
+                                </div>
+                            </div>
+                            <div class="form-group grid-col-2">
+                                <div>
+                                    <label>IP / Host do Servidor</label>
+                                    <input type="text" v-model="config.Servers[modal.index].ServerIP">
+                                </div>
+                                <div>
+                                    <label>Porta do Servidor</label>
+                                    <input type="text" v-model="config.Servers[modal.index].ServerPort" placeholder="443">
+                                </div>
+                            </div>
+                            <div class="form-group grid-col-2">
+                                <div>
+                                    <label>FLAG (URL)</label>
+                                    <input type="text" v-model="config.Servers[modal.index].FLAG" placeholder="https://.../bandeira.png">
+                                </div>
+                                <div>
+                                    <label>URL Check User</label>
+                                    <input type="text" v-model="config.Servers[modal.index].CheckUser" placeholder="http://.../check?user={user}">
+                                </div>
+                            </div>
+                            <div class="form-group grid-col-2">
+                                <div>
+                                    <label>Usuário</label>
+                                    <input type="text" v-model="config.Servers[modal.index].USER">
+                                </div>
+                                <div>
+                                    <label>Senha</label>
+                                    <input type="password" v-model="config.Servers[modal.index].PASS">
+                                </div>
+                            </div>
+                            <div v-if="['Direct','Proxy','Tlsws'].includes(config.Servers[modal.index].Info)" class="form-group grid-col-2">
+                                <div class="grid-col-full">
+                                    <label>Payload</label>
+                                    <textarea v-model="config.Servers[modal.index].Payload" placeholder="GET /app8 HTTP/1.1[lf]Host: dominio.com[lf]Upgrade: websocket[lf][lf]"></textarea>
+                                    <small class="text-muted">Use [lf] para quebra de linha. O app usa exatamente o texto informado.</small>
+                                </div>
+                            </div>
+                            <div v-if="['Proxy','Tlsws','XHTTP'].includes(config.Servers[modal.index].Info)" class="form-group grid-col-2">
+                                <div>
+                                    <label>ProxyIP / Host</label>
+                                    <input type="text" v-model="config.Servers[modal.index].ProxyIP" placeholder="IP ou host; use # para múltiplos">
+                                    <small class="field-help">Para rotação, separe vários proxies com <code>#</code>. No XHTTP, pode ser um domínio, como <code>oc3xhkzwdcw.map.azionedge.net</code>.</small>
+                                </div>
+                                <div>
+                                    <label>ProxyPort <span v-if="config.Servers[modal.index].Info === 'XHTTP'">(opcional)</span></label>
+                                    <input type="text" v-model="config.Servers[modal.index].ProxyPort" placeholder="443">
+                                </div>
+                            </div>
+                            <div v-if="['Ssl','Tlsws','XHTTP'].includes(config.Servers[modal.index].Info)" class="form-group">
+                                <label>SNI</label>
+                                <input type="text" v-model="config.Servers[modal.index].SNI" placeholder="app.tim.com.br">
+                                <small v-if="config.Servers[modal.index].Info === 'XHTTP'" class="field-help">No XHTTP, informe o domínio SNI usado pelo servidor.</small>
+                            </div>
+                            <div v-if="config.Servers[modal.index].Info === 'XHTTP'" class="form-group">
+<label>Path</label>
+                                <input type="text" v-model="config.Servers[modal.index].Path" placeholder="/ssh">
+                                    <small class="field-help">No XHTTP, use o caminho configurado pelo servidor, por exemplo <code>/ssh</code>.</small>
+                            </div>
+                            <div class="form-group grid-col-2">
+                                <div>
+                                    <label>ColorName</label>
+                                    <input type="text" v-model="config.Servers[modal.index].ColorName" placeholder="#ffffff">
+                                </div>
+                                <div>
+                                    <label>ColorDescription</label>
+                                    <input type="text" v-model="config.Servers[modal.index].ColorDescription" placeholder="#ffffff">
+                                </div>
+                            </div>
+                            <div class="form-group grid-col-2">
+                                <div>
+                                    <label>Color</label>
+                                    <input type="text" v-model="config.Servers[modal.index].Color" placeholder="#0000ff">
+                                </div>
+                                <div>
+                                    <label>Versão TLS</label>
+                                    <select v-model="config.Servers[modal.index].TLSVersion">
+                                        <option value="TLSv1.3">TLSv1.3</option>
+                                        <option value="TLSv1.2">TLSv1.2</option>
+                                        <option value="TLSv1.1">TLSv1.1</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn primary" @click="closeModal">Concluir</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Barra global de configuração, separada do perfil e do pool CDN. -->
+        <div class="floating-save-bar" v-if="activeMenu !== 'profile'">
+            <div class="floating-save-inner">
+                <span v-if="saveStatus" class="save-status">{{ saveStatus }}</span>
+                <span v-else-if="hasPendingChanges" class="save-status save-status-pending">Alterações pendentes</span>
+                <span v-else class="save-status save-status-ok">Tudo salvo</span>
+                <button type="button" class="btn primary" :disabled="isSaving || !hasPendingChanges" @click="saveAllChanges" :title="hasPendingChanges ? 'Publicar as alterações' : 'Nenhuma alteração pendente'">
+                    {{ isSaving ? 'Salvando...' : (hasPendingChanges ? 'Salvar Configurações' : 'Tudo salvo') }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Toast de status -->
+        <div v-if="saveStatus" class="save-toast">{{ saveStatus }}</div>
+    </div>
+
+    <script>
+        const initialConfig = <%- configStr %>;
+
+        const appUrl = "<%= appUrl %>";
+
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                if (!initialConfig.Networks) initialConfig.Networks = [];
+                if (!initialConfig.Servers) initialConfig.Servers = [];
+
+                // Modelo exclusivo do ATX TUNNEL: somente estas chaves são entregues ao app.
+                const serverDefaults = {
+                    Name: '', ColorName: '#ffffff', Description: '', ColorDescription: '#ffffff',
+                    FLAG: '', ServerIP: '', ServerPort: '443', CheckUser: '', USER: '', PASS: '',
+                    Payload: '', ProxyIP: '', ProxyPort: '443', SNI: '', Path: '', TLSVersion: 'TLSv1.2',
+                    Color: '#0000ff', Info: 'Tlsws'
+                };
+                const atxKeys = Object.keys(serverDefaults);
+                initialConfig.Servers = initialConfig.Servers.map(server => {
+                    const normalized = {};
+                    atxKeys.forEach(key => { normalized[key] = server[key] ?? serverDefaults[key]; });
+                    normalized.Info = ['Ssl', 'Direct', 'Proxy', 'Tlsws', 'XHTTP'].includes(server.Info)
+                        ? server.Info : (['Ssl', 'Direct', 'Proxy', 'Tlsws', 'XHTTP'].includes(server.TYPE) ? server.TYPE : 'Tlsws');
+                    return normalized;
+                });
+                
+                initialConfig.Update = appUrl;
+                initialConfig.UdpPort = String(initialConfig.UdpPort ?? '7300');
+                initialConfig.Contato = initialConfig.Contato ?? '';
+                initialConfig.Site = initialConfig.Site ?? '';
+                initialConfig.AppVersion = Number(initialConfig.AppVersion ?? initialConfig.Version ?? 1);
+                initialConfig.VersionName = String(initialConfig.VersionName ?? initialConfig.Version ?? '1');
+                initialConfig.UpdateApk = String(initialConfig.UpdateApk ?? '');
+                initialConfig.Actualization = (initialConfig.Actualization === true || initialConfig.Actualization === 'true' || initialConfig.Actualization === 1 || initialConfig.Actualization === '1')
+                    ? 'true'
+                    : 'false';
+                initialConfig.Sms = Object.assign(
+                    { Version: '1', Update: '', Notes: '' },
+                    (initialConfig.Sms && typeof initialConfig.Sms === 'object') ? initialConfig.Sms : {}
+                );
+                initialConfig.Sms.Version = String(initialConfig.Sms.Version ?? '1');
+                initialConfig.Sms.Update = String(initialConfig.Sms.Update ?? '');
+                initialConfig.Sms.Notes = String(initialConfig.Sms.Notes ?? '');
+                initialConfig.Theme = Object.assign({
+                    Version: '1', Update: '', AppName: 'ATX TUNNEL', ImgFundo: '', ImgLogo: '', ImgBanner: '',
+                    ImgMenu: '', ImgLogs: '', ImgCheck: '', ImgUser: '', ImgPass: '', ColorOne: '#7A333333',
+                    ColorTwo: '#7A333333', ColorStarter: '#7A333333', ColorDialogs: '#84ffffff',
+                    ColorButtons: '#333333', ImgUpdate: ''
+                }, initialConfig.Theme || {});
+                initialConfig.Theme.AppName = 'ATX TUNNEL';
+
+                // Delete the fake Layout object if it was accidentally created before
+                if (initialConfig.Layout) delete initialConfig.Layout;
+                
+                return {
+                    activeMenu: ['dashboard','general','layout','servers','profile'].includes(localStorage.getItem('activeMenu')) ? localStorage.getItem('activeMenu') : 'dashboard',
+                    connectionModes: [
+                        'Ssl', 'Direct', 'Proxy', 'Tlsws', 'XHTTP'
+                    ],
+                    modeDescriptions: {
+                        Ssl: 'SSL direto: o app usa ServerIP, ServerPort e SNI, sem proxy personalizado.',
+                        Direct: 'Direct: conexão direta; o app usa ServerIP, ServerPort e Payload.',
+                        Proxy: 'Proxy: o app usa ServerIP, ServerPort, ProxyIP, ProxyPort e Payload.',
+                        Tlsws: 'Tlsws: o app usa servidor, porta, proxy, payload e SNI.',
+                        XHTTP: 'XHTTP: o app usa servidor, porta, proxy, SNI e Path. O padrão de Path é /ssh.'
+                    },
+                    config: initialConfig,
+                    savedGlobalSnapshot: JSON.stringify((() => { const snapshot = JSON.parse(JSON.stringify(initialConfig)); delete snapshot.Sms; return snapshot; })()),
+                    hasPendingChanges: false,
+                    importMsg: '',
+                    importUrl: '',
+                    importingUrl: false,
+                    profile: {
+                        username: '<%= user.username %>',
+                        email: '<%= user.email || "" %>',
+                        updateUuid: '<%= user.updateUuid || "" %>',
+                        updateUrl: '<%= updateUrl %>',
+                        createdAt: '<%= user.created_at || "" %>',
+                        isAdmin: <%= user.isAdmin ? 'true' : 'false' %>,
+                        currentPassword: '',
+                        newPassword: ''
+                    },
+                    profileSaving: false,
+                    profileMsg: '',
+                    profileError: '',
+                    modal: {
+                        isOpen: false,
+                        type: '',
+                        index: -1
+                    },
+                    isSaving: false,
+                    saveStatus: ''
+                }
+            },
+            mounted() {
+                this.refreshProfile();
+            },
+            computed: {
+                isActualizationOn() {
+                    return this.config.Actualization === 'true' || this.config.Actualization === true;
+                },
+            },
+            watch: {
+                config: {
+                    deep: true,
+                    handler() {
+                        this.hasPendingChanges = this.serializeGlobalConfig() !== this.savedGlobalSnapshot;
+                    }
+                }
+            },
+            methods: {
+                serializeGlobalConfig() {
+                    const snapshot = JSON.parse(JSON.stringify(this.config || {}));
+                    delete snapshot.Sms;
+                    return JSON.stringify(snapshot);
+                },
+                markGlobalSaved() {
+                    this.savedGlobalSnapshot = this.serializeGlobalConfig();
+                    this.hasPendingChanges = false;
+                },
+                async setActualization(on) {
+                    this.config.Actualization = on ? 'true' : 'false';
+                    // Salva imediatamente para não voltar false ao recarregar
+                    await this.saveConfig();
+                },
+                async refreshProfile() {
+                    try {
+                        const response = await fetch('/api/profile');
+                        const data = await response.json();
+                        if (!response.ok) return;
+                        this.profile.username = data.username || this.profile.username;
+                        this.profile.email = data.email || '';
+                        this.profile.updateUuid = data.updateUuid || this.profile.updateUuid;
+                        this.profile.updateUrl = data.updateUrl || this.profile.updateUrl;
+                        this.profile.createdAt = data.created_at || this.profile.createdAt || '';
+                        this.profile.isAdmin = !!data.isAdmin;
+                    } catch (e) { /* ignore */ }
+                },
+                async regenerateUpdateUuid() {
+                    if (!confirm('Gerar um novo UUID? O UUID anterior deixará de funcionar imediatamente.')) return;
+                    this.profileSaving = true;
+                    this.profileMsg = '';
+                    this.profileError = '';
+                    try {
+                        const response = await fetch('/api/profile/update-uuid/regenerate', {
+                            method: 'POST',
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        const data = await response.json().catch(() => ({}));
+                        if (!response.ok) throw new Error(data.error || 'Falha ao gerar novo UUID');
+                        this.profile.updateUuid = data.updateUuid || '';
+                        this.profile.updateUrl = data.updateUrl || '';
+                        this.profileMsg = '✅ Novo UUID gerado!';
+                        setTimeout(() => { this.profileMsg = ''; }, 3500);
+                    } catch (err) {
+                        this.profileError = err.message || 'Erro ao gerar novo UUID';
+                    } finally {
+                        this.profileSaving = false;
+                    }
+                },
+                async saveProfile() {
+                    this.profileSaving = true;
+                    this.profileMsg = '';
+                    this.profileError = '';
+                    try {
+                        const response = await fetch('/api/profile', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                            body: JSON.stringify({
+                                email: this.profile.email,
+                                currentPassword: this.profile.currentPassword,
+                                newPassword: this.profile.newPassword
+                            })
+                        });
+                        const data = await response.json().catch(() => ({}));
+                        if (!response.ok) {
+                            throw new Error(data.error || 'Falha ao salvar perfil');
+                        }
+                        this.profile.email = data.email || this.profile.email;
+                        this.profile.currentPassword = '';
+                        this.profile.newPassword = '';
+                        this.profileMsg = '✅ Perfil atualizado!';
+                        setTimeout(() => { this.profileMsg = ''; }, 3000);
+                    } catch (err) {
+                        this.profileError = err.message || 'Erro ao salvar perfil';
+                    } finally {
+                        this.profileSaving = false;
+                    }
+                },
+                setMenu(menu) {
+                    this.activeMenu = menu;
+                    localStorage.setItem('activeMenu', menu);
+                    if (window.innerWidth <= 768) {
+                        toggleSidebar();
+                    }
+                },
+                async persistConfig() {
+                    this.config.AppVersion = Number(this.config.AppVersion);
+                    this.config.Actualization = (this.config.Actualization === true || this.config.Actualization === 'true') ? 'true' : 'false';
+
+                    const response = await fetch('/dashboard/save', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ config_json: JSON.stringify(this.config) })
+                    });
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok || data.ok === false) {
+                        throw new Error((data && data.error) || 'Erro ao salvar as configurações no servidor.');
+                    }
+                    if (data.Version !== undefined) this.config.Version = Number(data.Version);
+                    if (data.UdpPort !== undefined) this.config.UdpPort = String(data.UdpPort);
+                    if (data.Contato !== undefined) this.config.Contato = String(data.Contato);
+                    if (data.Site !== undefined) this.config.Site = String(data.Site);
+                    if (data.AppVersion !== undefined) this.config.AppVersion = Number(data.AppVersion);
+                    if (data.VersionName !== undefined) this.config.VersionName = String(data.VersionName);
+                    if (data.Actualization !== undefined) this.config.Actualization = String(data.Actualization);
+                    if (data.UpdateApk !== undefined) this.config.UpdateApk = String(data.UpdateApk);
+                    if (data.Sms) this.config.Sms = Object.assign({ Version: '1', Update: '', Notes: '' }, data.Sms);
+                    if (data.Theme) this.config.Theme = Object.assign({}, this.config.Theme || {}, data.Theme);
+                    this.markGlobalSaved();
+                    return data;
+                },
+                async saveConfig() {
+                    if (this.isSaving) return;
+                    this.isSaving = true;
+                    this.saveStatus = '';
+                    try {
+                        await this.persistConfig();
+                        this.saveStatus = `✅ Config salva! Version=${this.config.Version}`;
+                        setTimeout(() => { this.saveStatus = ''; }, 3500);
+                    } catch (e) {
+                        alert(e.message || 'Erro ao salvar as configurações.');
+                    } finally {
+                        this.isSaving = false;
+                    }
+                },
+                async saveAllChanges() {
+                    if (this.isSaving) return;
+                    this.isSaving = true;
+                    this.saveStatus = '';
+                    try {
+                        await this.persistConfig();
+                        this.saveStatus = `✅ Configuração, servidores e tema salvos! Configuração v${this.config.Version}`;
+                        setTimeout(() => { this.saveStatus = ''; }, 4500);
+                    } catch (e) {
+                        alert(e.message || 'Erro ao salvar as alterações.');
+                    } finally {
+                        this.isSaving = false;
+                    }
+                },
+                exportConfig() {
+                    window.location.href = '/api/config/export';
+                },
+                async importConfig(e) {
+                    const file = e.target.files && e.target.files[0];
+                    if (!file) return;
+                    this.importMsg = '';
+                    try {
+                        const text = await file.text();
+                        const parsed = JSON.parse(text);
+                        const response = await fetch('/api/config/import', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                            body: JSON.stringify(parsed)
+                        });
+                        const data = await response.json().catch(() => ({}));
+                        if (!response.ok) throw new Error(data.error || 'Falha ao importar');
+                        if (data.config) {
+                            this.config = Object.assign({}, this.config, data.config);
+                            if (!this.config.Sms) this.config.Sms = { Version: '1', Update: '', Notes: '' };
+                            if (!this.config.Theme) this.config.Theme = { Version: '1', AppName: 'ATX TUNNEL' };
+                            this.markGlobalSaved();
+                        }
+                        const summary = data.importSummary;
+                        if (summary && summary.source === 'external-array') {
+                            const warningText = Array.isArray(summary.warnings) && summary.warnings.length
+                                ? ` Avisos: ${summary.warnings.join(' ')}`
+                                : '';
+                            this.importMsg = `✅ ${summary.imported} servidores convertidos para o ATX TUNNEL.${warningText}`;
+                        } else {
+                            this.importMsg = '✅ Configuração importada com sucesso.';
+                        }
+                        this.saveStatus = '✅ Config importada!';
+                        setTimeout(() => { this.saveStatus = ''; this.importMsg = ''; }, 4000);
+                    } catch (err) {
+                        alert(err.message || 'JSON inválido');
+                    } finally {
+                        e.target.value = '';
+                    }
+                },
+                async importConfigUrl() {
+                    if (!this.importUrl) return;
+                    this.importingUrl = true;
+                    this.importMsg = '';
+                    try {
+                        const response = await fetch('/api/config/import-url', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                            body: JSON.stringify({ url: this.importUrl })
+                        });
+                        const data = await response.json().catch(() => ({}));
+                        if (!response.ok) throw new Error(data.error || 'Falha ao importar URL');
+                        const summary = data.imported || {};
+                        this.importMsg = `✅ ${summary.imported ?? 0} servidor(es) importado(s) da URL.`;
+                        this.importUrl = '';
+                        await this.refreshProfile();
+                        window.location.reload();
+                    } catch (err) {
+                        this.importMsg = `Erro: ${err.message || 'não foi possível ler a URL'}`;
+                    } finally {
+                        this.importingUrl = false;
+                    }
+                },
+                editItem(type, index) {
+                    this.modal.type = type;
+                    this.modal.index = index;
+                    this.modal.isOpen = true;
+                },
+                closeModal() {
+                    this.modal.isOpen = false;
+                },
+                onConnectionModeChange() {
+                    const server = this.config.Servers[this.modal.index];
+                    if (!server) return;
+                    if (server.Info === 'XHTTP') {
+                        server.Payload = '';
+                        if (server.ProxyPort === '443') server.ProxyPort = '';
+                    }
+                },
+                addServer() {
+                    this.config.Servers.push({
+                        Name: "Novo Servidor",
+                        ColorName: "#ffffff",
+                        Description: "",
+                        ColorDescription: "#ffffff",
+                        FLAG: "",
+                        ServerIP: "",
+                        ServerPort: "443",
+                        CheckUser: "",
+                        USER: "",
+                        PASS: "",
+                        Payload: "",
+                        ProxyIP: "",
+                        ProxyPort: "443",
+                        SNI: "",
+                        Path: "",
+                        TLSVersion: "TLSv1.2",
+                        Color: "#0000ff",
+                        Info: "Tlsws"
+                    });
+                    this.editItem('Servers', this.config.Servers.length - 1);
+                },
+                removeServer(idx) {
+                    if (confirm("Tem certeza que deseja excluir este servidor?")) {
+                        this.config.Servers.splice(idx, 1);
+                    }
+                },
+            }
+        }).mount('#app')
+
+        function copySpecificUrl(id) {
+            var copyText = document.getElementById(id);
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            document.execCommand("copy");
+            const btn = copyText.parentElement.querySelector('.btn');
+            btn.textContent = 'Copiado!';
+            setTimeout(() => btn.textContent = 'Copiar', 2000);
+        }
+
+        function copyUrl() {
+            copySpecificUrl('configUrl');
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const closeBtn = document.getElementById('closeMenuBtn');
+            sidebar.classList.toggle('open');
+            if(window.innerWidth <= 768) {
+                closeBtn.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
+            }
+        }
+        
+        window.addEventListener('resize', () => {
+            const closeBtn = document.getElementById('closeMenuBtn');
+            if(window.innerWidth > 768) {
+                document.getElementById('sidebar').classList.remove('open');
+                closeBtn.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

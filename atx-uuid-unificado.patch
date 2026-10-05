@@ -1,0 +1,651 @@
+From cbd75e39bd240f33ede12ae08b46e1e8b47ab610 Mon Sep 17 00:00:00 2001
+From: Willapela <1.19463602e+08+Willapela@users.noreply.github.com>
+Date: Tue, 25 Aug 2026 17:47:57 +0000
+Subject: [PATCH] =?UTF-8?q?Adicionar=20UUID=20unificado=20para=20atualiza?=
+ =?UTF-8?q?=C3=A7=C3=B5es?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ README.md           |  41 +++++++++++
+ index.js            | 174 ++++++++++++++++++++++++++++++++++++--------
+ package-lock.json   | 115 +++++++++++++++++++++++++++++
+ views/dashboard.ejs |  87 +++++++++++++++++-----
+ 4 files changed, 371 insertions(+), 46 deletions(-)
+
+diff --git a/README.md b/README.md
+index c123526..47deacf 100644
+--- a/README.md
++++ b/README.md
+@@ -44,6 +44,47 @@ Com o domínio configurado, os recursos ficam disponíveis nestas rotas:
+ 
+ Os arquivos estão em `public/updates/`. O arquivo `config` publicado é uma versão sanitizada, sem usuário, senha ou IP real. Substitua-o pela sua configuração privada somente na VPS e nunca faça commit de credenciais no GitHub.
+ 
++## UUID de atualização unificado
++
++Cada usuário possui um `updateUuid` persistente. O UUID é gerado automaticamente no cadastro e também é criado sob demanda para contas antigas. Ele pode ser copiado no menu **Meu Perfil** ou na visão geral do painel. A regeneração invalida imediatamente o UUID anterior.
++
++O aplicativo precisa consultar apenas o endpoint unificado abaixo e não precisa mais receber ou configurar separadamente os links de configuração, tema, SMS e atualização do aplicativo:
++
++```text
++GET /u/<UUID>
++```
++
++A resposta JSON contém o mapa dos recursos:
++
++```json
++{
++  "uuid": "<UUID>",
++  "version": "1",
++  "config": "https://seu-dominio/u/<UUID>/config",
++  "appupdate": "https://seu-dominio/u/<UUID>/appupdate",
++  "sms": "https://seu-dominio/u/<UUID>/sms",
++  "theme": "https://seu-dominio/u/<UUID>/theme",
++  "resources": {
++    "config": "https://seu-dominio/u/<UUID>/config",
++    "appupdate": "https://seu-dominio/u/<UUID>/appupdate",
++    "sms": "https://seu-dominio/u/<UUID>/sms",
++    "theme": "https://seu-dominio/u/<UUID>/theme"
++  }
++}
++```
++
++Os endpoints derivados continuam entregando os payloads no formato esperado pelo aplicativo. As rotas antigas `/<usuario>/config`, `/<usuario>/appupdate`, `/<usuario>/sms` e `/<usuario>/theme` continuam ativas para compatibilidade, mas o fluxo recomendado para instalações novas é salvar o UUID e resolver os links a partir de `/u/<UUID>`.
++
++O perfil autenticado também disponibiliza `updateUuid` e `updateUrl` em `GET /api/profile`. Para trocar o identificador, use `POST /api/profile/update-uuid/regenerate`; a operação exige sessão autenticada.
++
++> O UUID identifica o conjunto de atualizações, mas não substitui a autenticação do painel. Mantenha o UUID privado quando o conteúdo publicado não puder ser acessado por qualquer pessoa que tenha o identificador.
++
++## Integração recomendada no aplicativo
++
++No aplicativo, salve o UUID informado pelo painel e faça uma requisição para o endpoint `/u/<UUID>`. Leia os campos `config`, `appupdate`, `sms` e `theme` da resposta e use cada URL nas rotinas que já fazem o download dos respectivos recursos. Dessa forma, o painel pode continuar mantendo os links e os payloads internamente, enquanto a configuração inicial do aplicativo usa um único identificador.
++
++Para manter o comportamento legado, o aplicativo também pode receber diretamente uma URL individual, mas não é mais necessário configurar as quatro URLs manualmente quando o resolvedor por UUID estiver implementado.
++
+ ## Segurança
+ 
+ O banco de usuários fica em `data/users/` e é ignorado pelo Git. Defina sempre `JWT_SECRET` antes de colocar o painel na internet. Não use credenciais de servidores diretamente em um repositório público.
+diff --git a/index.js b/index.js
+index 5f22fc0..c97f289 100644
+--- a/index.js
++++ b/index.js
+@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
+ const cookieParser = require('cookie-parser');
+ const path = require('path');
+ const fs = require('fs');
++const crypto = require('crypto');
+ const multer = require('multer');
+ 
+ const app = express();
+@@ -285,10 +286,18 @@ function buildSmsPayload(user) {
+     };
+ }
+ 
+-function buildUserConfig(req, username, user) {
++function buildPublicResourceUrl(req, identifier, resource, publicPrefix = '') {
++    const prefix = String(publicPrefix || '');
++    return `${requestBaseUrl(req)}${prefix}/${encodeURIComponent(identifier)}/${resource}`;
++}
++
++function buildUpdateEntryUrl(req, uuid) {
++    return `${requestBaseUrl(req)}/u/${encodeURIComponent(uuid)}`;
++}
++
++function buildUserConfig(req, username, user, publicPrefix = '') {
+     const stored = parseUserConfig(user);
+-    const base = requestBaseUrl(req);
+-    const configUrl = `${base}/${encodeURIComponent(username)}/config`;
++    const configUrl = buildPublicResourceUrl(req, username, 'config', publicPrefix);
+     const serverKeys = ['Name', 'ColorName', 'Description', 'ColorDescription', 'FLAG', 'ServerIP', 'ServerPort', 'CheckUser', 'USER', 'PASS', 'Payload', 'ProxyIP', 'ProxyPort', 'SNI', 'Path', 'Color', 'Info'];
+     const servers = Array.isArray(stored.Servers) ? stored.Servers.map((server) => {
+         const clean = {};
+@@ -310,7 +319,7 @@ function buildUserConfig(req, username, user) {
+     };
+ }
+ 
+-function buildAppUpdate(req, username, user) {
++function buildAppUpdate(req, username, user, publicPrefix = '') {
+     const stored = parseUserConfig(user);
+     const actualization = (stored.Actualization === true || stored.Actualization === 'true' || stored.Actualization === 1 || stored.Actualization === '1')
+         ? 'true'
+@@ -318,7 +327,7 @@ function buildAppUpdate(req, username, user) {
+     return {
+         Version: String(stored.AppVersion ?? stored.Version ?? 1),
+         VersionName: String(stored.VersionName ?? stored.Version ?? '1'),
+-        Update: `${requestBaseUrl(req)}/${encodeURIComponent(username)}/config`,
++        Update: buildPublicResourceUrl(req, username, 'config', publicPrefix),
+         Actualization: actualization,
+         UpdateApk: stored.UpdateApk || ''
+     };
+@@ -358,6 +367,73 @@ function saveUser(username, data) {
+     fs.writeFileSync(file, JSON.stringify(data, null, 2));
+ }
+ 
++const UPDATE_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
++
++function isValidUpdateUuid(value) {
++    return UPDATE_UUID_PATTERN.test(String(value || '').trim());
++}
++
++function ensureUserUpdateUuid(user) {
++    if (!user) return null;
++    if (isValidUpdateUuid(user.updateUuid)) return String(user.updateUuid).toLowerCase();
++    user.updateUuid = crypto.randomUUID();
++    saveUser(user.username, user);
++    return user.updateUuid;
++}
++
++function findUserByUpdateUuid(value) {
++    const target = String(value || '').trim().toLowerCase();
++    if (!isValidUpdateUuid(target)) return null;
++    return listUsers().find((user) => String(user.updateUuid || '').toLowerCase() === target) || null;
++}
++
++function buildThemePayload(req, username, user, publicPrefix = '') {
++    const config = parseUserConfig(user);
++    const savedTheme = (config.Theme && typeof config.Theme === 'object') ? config.Theme : {};
++    return {
++        Version: String(savedTheme.Version ?? config.Version ?? 1),
++        Update: buildPublicResourceUrl(req, username, 'theme', publicPrefix),
++        AppName: 'ATX TUNNEL',
++        ImgFundo: savedTheme.ImgFundo || '',
++        ImgLogo: savedTheme.ImgLogo || '',
++        ImgBanner: savedTheme.ImgBanner || '',
++        ImgMenu: savedTheme.ImgMenu || '',
++        ImgLogs: savedTheme.ImgLogs || '',
++        ImgCheck: savedTheme.ImgCheck || '',
++        ImgUser: savedTheme.ImgUser || '',
++        ImgPass: savedTheme.ImgPass || '',
++        ColorOne: savedTheme.ColorOne || '',
++        ColorTwo: savedTheme.ColorTwo || '',
++        ColorStarter: savedTheme.ColorStarter || '',
++        ColorDialogs: savedTheme.ColorDialogs || '',
++        ColorButtons: savedTheme.ColorButtons || '',
++        ImgUpdate: savedTheme.ImgUpdate || ''
++    };
++}
++
++function buildUpdateManifest(req, uuid, user) {
++    const config = parseUserConfig(user);
++    const resources = {
++        config: buildPublicResourceUrl(req, uuid, 'config', '/u'),
++        appupdate: buildPublicResourceUrl(req, uuid, 'appupdate', '/u'),
++        sms: buildPublicResourceUrl(req, uuid, 'sms', '/u'),
++        theme: buildPublicResourceUrl(req, uuid, 'theme', '/u')
++    };
++    return {
++        uuid,
++        version: String(config.Version ?? 1),
++        Update: resources.config,
++        AppUpdate: resources.appupdate,
++        SmsUpdate: resources.sms,
++        ThemeUpdate: resources.theme,
++        config: resources.config,
++        appupdate: resources.appupdate,
++        sms: resources.sms,
++        theme: resources.theme,
++        resources
++    };
++}
++
+ function listUsers() {
+     if (!fs.existsSync(DB_DIR)) return [];
+     return fs.readdirSync(DB_DIR)
+@@ -655,6 +731,7 @@ app.post('/register', async (req, res) => {
+             email,
+             password: hash,
+             config_json: configJsonStr,
++            updateUuid: crypto.randomUUID(),
+             created_at: new Date().toISOString(),
+             plan: 'trial',
+             expiresAt: addDaysIso(7),
+@@ -670,9 +747,12 @@ app.post('/register', async (req, res) => {
+ app.get('/api/profile', requireAuth, (req, res) => {
+     const user = getUser(req.user.username);
+     if (!user) return res.status(404).json({ error: 'UsuÃ¡rio nÃ£o encontrado' });
++    const updateUuid = ensureUserUpdateUuid(user);
+     res.json({
+         username: user.username,
+         email: user.email || '',
++        updateUuid,
++        updateUrl: buildUpdateEntryUrl(req, updateUuid),
+         created_at: user.created_at || null,
+         plan: user.plan || 'trial',
+         expiresAt: user.expiresAt || null,
+@@ -715,10 +795,25 @@ app.post('/api/profile', requireAuth, async (req, res) => {
+     }
+ 
+     saveUser(user.username, user);
++    const updateUuid = ensureUserUpdateUuid(user);
+     res.json({
+         ok: true,
+         username: user.username,
+-        email: user.email || ''
++        email: user.email || '',
++        updateUuid,
++        updateUrl: buildUpdateEntryUrl(req, updateUuid)
++    });
++});
++
++app.post('/api/profile/update-uuid/regenerate', requireAuth, (req, res) => {
++    const user = getUser(req.user.username);
++    if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
++    user.updateUuid = crypto.randomUUID();
++    saveUser(user.username, user);
++    res.json({
++        ok: true,
++        updateUuid: user.updateUuid,
++        updateUrl: buildUpdateEntryUrl(req, user.updateUuid)
+     });
+ });
+ 
+@@ -1016,6 +1111,7 @@ app.get('/api/admin/orders/pending', requireAuth, (req, res) => {
+ app.get('/dashboard', requireAuth, requireActivePlan, (req, res) => {
+     const user = req.userFull || getUser(req.user.username);
+     if (!user) return res.redirect('/login');
++    const updateUuid = ensureUserUpdateUuid(user);
+ 
+     // Preserve the external port (for example :2000) in all generated URLs.
+     const hostUrl = requestBaseUrl(req);
+@@ -1026,6 +1122,7 @@ app.get('/dashboard', requireAuth, requireActivePlan, (req, res) => {
+         user: {
+             ...req.user,
+             email: user.email || '',
++            updateUuid,
+             created_at: user.created_at || null,
+             plan: user.plan || 'trial',
+             expiresAt: user.expiresAt || null,
+@@ -1037,6 +1134,11 @@ app.get('/dashboard', requireAuth, requireActivePlan, (req, res) => {
+         appUpdateUrl: `${hostUrl}/${encodeURIComponent(user.username)}/appupdate`,
+         smsUrl: `${hostUrl}/${encodeURIComponent(user.username)}/sms`,
+         themeUrl: `${hostUrl}/${encodeURIComponent(user.username)}/theme`,
++        updateUrl: buildUpdateEntryUrl(req, updateUuid),
++        updateConfigUrl: buildPublicResourceUrl(req, updateUuid, 'config', '/u'),
++        updateAppUpdateUrl: buildPublicResourceUrl(req, updateUuid, 'appupdate', '/u'),
++        updateSmsUrl: buildPublicResourceUrl(req, updateUuid, 'sms', '/u'),
++        updateThemeUrl: buildPublicResourceUrl(req, updateUuid, 'theme', '/u'),
+         apkUrl: hasApk ? `${hostUrl}${apkRelative}` : '',
+         hasApk
+     });
+@@ -1271,7 +1373,42 @@ app.post('/api/config/import', requireAuth, requireActivePlanApi, (req, res) =>
+     }
+ });
+ 
+-// Endpoints pÃºblicos no formato esperado pelo aplicativo.
++// Resolvedor unificado: o aplicativo precisa conhecer apenas o UUID.
++app.get('/u/:uuid', (req, res) => {
++    const user = findUserByUpdateUuid(req.params.uuid);
++    if (!user) return res.status(404).json({ error: 'UUID de atualização não encontrado' });
++    const uuid = ensureUserUpdateUuid(user);
++    res.type('application/json').send(buildUpdateManifest(req, uuid, user));
++});
++
++app.get('/u/:uuid/config', (req, res) => {
++    const user = findUserByUpdateUuid(req.params.uuid);
++    if (!user) return res.status(404).send('Not Found');
++    const uuid = ensureUserUpdateUuid(user);
++    res.type('application/json').send(buildUserConfig(req, uuid, user, '/u'));
++});
++
++app.get('/u/:uuid/appupdate', (req, res) => {
++    const user = findUserByUpdateUuid(req.params.uuid);
++    if (!user) return res.status(404).send('Not Found');
++    const uuid = ensureUserUpdateUuid(user);
++    res.type('application/json').send(buildAppUpdate(req, uuid, user, '/u'));
++});
++
++app.get('/u/:uuid/sms', (req, res) => {
++    const user = findUserByUpdateUuid(req.params.uuid);
++    if (!user) return res.status(404).send('Not Found');
++    res.type('application/json').send(buildSmsPayload(user));
++});
++
++app.get('/u/:uuid/theme', (req, res) => {
++    const user = findUserByUpdateUuid(req.params.uuid);
++    if (!user) return res.status(404).send('Not Found');
++    const uuid = ensureUserUpdateUuid(user);
++    res.type('application/json').send(buildThemePayload(req, uuid, user, '/u'));
++});
++
++// Endpoints pÃºblicos no formato esperado pelo aplicativo (legado).
+ app.get('/:username/config', (req, res) => {
+     const username = req.params.username;
+     const user = getUser(username);
+@@ -1297,28 +1434,7 @@ app.get('/:username/theme', (req, res) => {
+     const username = req.params.username;
+     const user = getUser(username);
+     if (!user) return res.status(404).send('Not Found');
+-    const config = parseUserConfig(user);
+-    const savedTheme = (config.Theme && typeof config.Theme === 'object') ? config.Theme : {};
+-    const theme = {
+-        Version: String(savedTheme.Version ?? config.Version ?? 1),
+-        Update: `${requestBaseUrl(req)}/${encodeURIComponent(username)}/theme`,
+-        AppName: 'ATX TUNNEL',
+-        ImgFundo: savedTheme.ImgFundo || '',
+-        ImgLogo: savedTheme.ImgLogo || '',
+-        ImgBanner: savedTheme.ImgBanner || '',
+-        ImgMenu: savedTheme.ImgMenu || '',
+-        ImgLogs: savedTheme.ImgLogs || '',
+-        ImgCheck: savedTheme.ImgCheck || '',
+-        ImgUser: savedTheme.ImgUser || '',
+-        ImgPass: savedTheme.ImgPass || '',
+-        ColorOne: savedTheme.ColorOne || '',
+-        ColorTwo: savedTheme.ColorTwo || '',
+-        ColorStarter: savedTheme.ColorStarter || '',
+-        ColorDialogs: savedTheme.ColorDialogs || '',
+-        ColorButtons: savedTheme.ColorButtons || '',
+-        ImgUpdate: savedTheme.ImgUpdate || ''
+-    };
+-    res.type('application/json').send(theme);
++    res.type('application/json').send(buildThemePayload(req, username, user));
+ });
+ console.log('Mercado Pago:', (typeof getMpAccessToken === 'function' && getMpAccessToken()) ? 'CONFIGURADO' : 'NÃO configurado (modo PIX manual)');
+ 
+diff --git a/package-lock.json b/package-lock.json
+index 5e20732..4334e09 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -14,6 +14,7 @@
+         "ejs": "^6.0.1",
+         "express": "^5.2.1",
+         "jsonwebtoken": "^9.0.3",
++        "multer": "^2.0.2",
+         "sqlite3": "^6.0.1"
+       }
+     },
+@@ -52,6 +53,12 @@
+         "node": ">= 0.6"
+       }
+     },
++    "node_modules/append-field": {
++      "version": "1.0.0",
++      "resolved": "https://registry.npmjs.org/append-field/-/append-field-1.0.0.tgz",
++      "integrity": "sha512-klpgFSWLW1ZEs8svjfb7g4qWY0YS5imI82dTg+QahUvJ8YqAY0P10Uk8tTyh9ZGuYEZEMaeJYCF5BFuX552hsw==",
++      "license": "MIT"
++    },
+     "node_modules/base64-js": {
+       "version": "1.5.1",
+       "resolved": "https://registry.npmjs.org/base64-js/-/base64-js-1.5.1.tgz",
+@@ -173,6 +180,23 @@
+       "integrity": "sha512-zRpUiDwd/xk6ADqPMATG8vc9VPrkck7T07OIx0gnjmJAnHnTVXNQG3vfvWNuiZIkwu9KrKdA1iJKfsfTVxE6NA==",
+       "license": "BSD-3-Clause"
+     },
++    "node_modules/buffer-from": {
++      "version": "1.1.2",
++      "resolved": "https://registry.npmjs.org/buffer-from/-/buffer-from-1.1.2.tgz",
++      "integrity": "sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==",
++      "license": "MIT"
++    },
++    "node_modules/busboy": {
++      "version": "1.6.0",
++      "resolved": "https://registry.npmjs.org/busboy/-/busboy-1.6.0.tgz",
++      "integrity": "sha512-8SFQbg/0hQ9xy3UNTB0YEnsNBbWfhf7RtnzpL7TkBiTBRfrQ9Fxcnz7VJsleJpyp6rVLvXiuORqjlHi5q+PYuA==",
++      "dependencies": {
++        "streamsearch": "^1.1.0"
++      },
++      "engines": {
++        "node": ">=10.16.0"
++      }
++    },
+     "node_modules/bytes": {
+       "version": "3.1.2",
+       "resolved": "https://registry.npmjs.org/bytes/-/bytes-3.1.2.tgz",
+@@ -220,6 +244,21 @@
+         "node": ">=18"
+       }
+     },
++    "node_modules/concat-stream": {
++      "version": "2.0.0",
++      "resolved": "https://registry.npmjs.org/concat-stream/-/concat-stream-2.0.0.tgz",
++      "integrity": "sha512-MWufYdFw53ccGjCA+Ol7XJYpAlW6/prSMzuPOTRnJGcGzuhLn4Scrz7qf6o8bROZ514ltazcIFJZevcfbo0x7A==",
++      "engines": [
++        "node >= 6.0"
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "buffer-from": "^1.0.0",
++        "inherits": "^2.0.3",
++        "readable-stream": "^3.0.2",
++        "typedarray": "^0.0.6"
++      }
++    },
+     "node_modules/content-disposition": {
+       "version": "1.1.0",
+       "resolved": "https://registry.npmjs.org/content-disposition/-/content-disposition-1.1.0.tgz",
+@@ -962,6 +1001,68 @@
+       "integrity": "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==",
+       "license": "MIT"
+     },
++    "node_modules/multer": {
++      "version": "2.2.0",
++      "resolved": "https://registry.npmjs.org/multer/-/multer-2.2.0.tgz",
++      "integrity": "sha512-6rdyFg2kLrMh9Jee7/BMPuV9lEAd7lLW2YUpF9/YxR7njyoUwwQ0ZPh3TaIY50Sw6vlyD2HW3wGOkTS4P79xrQ==",
++      "license": "MIT",
++      "dependencies": {
++        "append-field": "^1.0.0",
++        "busboy": "^1.6.0",
++        "concat-stream": "^2.0.0",
++        "type-is": "^1.6.18"
++      },
++      "engines": {
++        "node": ">= 10.16.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/express"
++      }
++    },
++    "node_modules/multer/node_modules/media-typer": {
++      "version": "0.3.0",
++      "resolved": "https://registry.npmjs.org/media-typer/-/media-typer-0.3.0.tgz",
++      "integrity": "sha512-dq+qelQ9akHpcOl/gUVRTxVIOkAJ1wR3QAvb4RsVjS8oVoFjDGTc679wJYmUmknUF5HwMLOgb5O+a3KxfWapPQ==",
++      "license": "MIT",
++      "engines": {
++        "node": ">= 0.6"
++      }
++    },
++    "node_modules/multer/node_modules/mime-db": {
++      "version": "1.52.0",
++      "resolved": "https://registry.npmjs.org/mime-db/-/mime-db-1.52.0.tgz",
++      "integrity": "sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==",
++      "license": "MIT",
++      "engines": {
++        "node": ">= 0.6"
++      }
++    },
++    "node_modules/multer/node_modules/mime-types": {
++      "version": "2.1.35",
++      "resolved": "https://registry.npmjs.org/mime-types/-/mime-types-2.1.35.tgz",
++      "integrity": "sha512-ZDY+bPm5zTTF+YpCrAU9nK0UgICYPT0QtT1NZWFv4s++TNkcgVaT0g6+4R2uI4MjQjzysHB1zxuWL50hzaeXiw==",
++      "license": "MIT",
++      "dependencies": {
++        "mime-db": "1.52.0"
++      },
++      "engines": {
++        "node": ">= 0.6"
++      }
++    },
++    "node_modules/multer/node_modules/type-is": {
++      "version": "1.6.18",
++      "resolved": "https://registry.npmjs.org/type-is/-/type-is-1.6.18.tgz",
++      "integrity": "sha512-TkRKr9sUTxEH8MdfuCSP7VizJyzRNMjj2J2do2Jr3Kym598JVdEksuzPQCnlFPW4ky9Q+iA+ma9BGm06XQBy8g==",
++      "license": "MIT",
++      "dependencies": {
++        "media-typer": "0.3.0",
++        "mime-types": "~2.1.24"
++      },
++      "engines": {
++        "node": ">= 0.6"
++      }
++    },
+     "node_modules/napi-build-utils": {
+       "version": "2.0.0",
+       "resolved": "https://registry.npmjs.org/napi-build-utils/-/napi-build-utils-2.0.0.tgz",
+@@ -1501,6 +1602,14 @@
+         "node": ">= 0.8"
+       }
+     },
++    "node_modules/streamsearch": {
++      "version": "1.1.0",
++      "resolved": "https://registry.npmjs.org/streamsearch/-/streamsearch-1.1.0.tgz",
++      "integrity": "sha512-Mcc5wHehp9aXz1ax6bZUyY5afg9u2rv5cqQI3mRrYkGC8rW2hM02jWuwjtL++LS5qinSyhj2QfLyNsuc+VsExg==",
++      "engines": {
++        "node": ">=10.0.0"
++      }
++    },
+     "node_modules/string_decoder": {
+       "version": "1.3.0",
+       "resolved": "https://registry.npmjs.org/string_decoder/-/string_decoder-1.3.0.tgz",
+@@ -1638,6 +1747,12 @@
+         "url": "https://opencollective.com/express"
+       }
+     },
++    "node_modules/typedarray": {
++      "version": "0.0.6",
++      "resolved": "https://registry.npmjs.org/typedarray/-/typedarray-0.0.6.tgz",
++      "integrity": "sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==",
++      "license": "MIT"
++    },
+     "node_modules/undici": {
+       "version": "6.27.0",
+       "resolved": "https://registry.npmjs.org/undici/-/undici-6.27.0.tgz",
+diff --git a/views/dashboard.ejs b/views/dashboard.ejs
+index cc13dc2..434fc01 100644
+--- a/views/dashboard.ejs
++++ b/views/dashboard.ejs
+@@ -100,6 +100,7 @@
+                     <div>
+                         <div style="font-weight: 600; color: #fff;"><%= user.username %></div>
+                         <div style="font-size: 0.8rem; color: var(--text-muted);"><%= user.email || 'Sem e-mail' %></div>
++                        <div style="font-size: 0.68rem; color: #9fc5ff; margin-top: .25rem; word-break: break-all;" title="UUID de atualização">UUID: <%= user.updateUuid %></div>
+                     </div>
+                 </div>
+                 <a href="/logout" class="btn danger full-width small" style="margin-top: 0.5rem;">Sair</a>
+@@ -117,27 +118,42 @@
+                 </div>
+                 
+                 <div class="glass-container config-card" style="margin-bottom: 2rem;">
+-                    <h3 style="margin-bottom: 1rem; color: #fff;">Sua URL de Sincronização</h3>
+-                    <p class="text-muted" style="margin-bottom: 1rem;">Cole esta URL no campo "Update URL" do seu aplicativo Conecta5G para sincronizar as configurações.</p>
++                    <h3 style="margin-bottom: 1rem; color: #fff;">Identificador único de atualização</h3>
++                    <p class="text-muted" style="margin-bottom: 1rem;">Agora o aplicativo pode usar somente este UUID. O painel resolve automaticamente os links de configuração, appupdate, tema e SMS.</p>
+                     <div class="url-box" style="margin-bottom: .75rem;">
+-                        <input type="text" readonly value="<%= appUrl %>" id="configUrl">
+-                        <button onclick="copyUrl()" class="btn secondary">Copiar</button>
++                        <input type="text" readonly value="<%= user.updateUuid %>" id="updateUuid">
++                        <button onclick="copySpecificUrl('updateUuid')" class="btn secondary">Copiar UUID</button>
+                     </div>
+-                    <p class="text-muted" style="margin: .5rem 0 0;">URL do appupdate, usada somente se o aplicativo solicitar atualização do APK:</p>
++                    <p class="text-muted" style="margin: .5rem 0 0;">Endpoint unificado para o app consultar o mapa de atualizações:</p>
+                     <div class="url-box" style="margin-bottom: .75rem;">
+-                        <input type="text" readonly value="<%= appUpdateUrl %>" id="appUpdateUrl">
+-                        <button onclick="copySpecificUrl('appUpdateUrl')" class="btn secondary">Copiar</button>
+-                    </div>
+-                    <p class="text-muted" style="margin: .5rem 0 0;">URL do tema do aplicativo:</p>
+-                    <div class="url-box" style="margin-bottom: .75rem;">
+-                        <input type="text" readonly value="<%= themeUrl %>" id="themeUrl">
+-                        <button onclick="copySpecificUrl('themeUrl')" class="btn secondary">Copiar</button>
+-                    </div>
+-                    <p class="text-muted" style="margin: .5rem 0 0;">URL do SMS do aplicativo:</p>
+-                    <div class="url-box" style="margin-bottom: 0;">
+-                        <input type="text" readonly value="<%= smsUrl %>" id="smsUrl">
+-                        <button onclick="copySpecificUrl('smsUrl')" class="btn secondary">Copiar</button>
++                        <input type="text" readonly value="<%= updateUrl %>" id="updateUrl">
++                        <button onclick="copySpecificUrl('updateUrl')" class="btn secondary">Copiar URL</button>
+                     </div>
++                    <details style="margin-top: 1rem;">
++                        <summary style="cursor:pointer; color:#9fc5ff;">Ver links individuais (compatibilidade)</summary>
++                        <div style="padding-top:.75rem;">
++                            <p class="text-muted" style="margin: .5rem 0 0;">Configuração:</p>
++                            <div class="url-box" style="margin-bottom: .75rem;">
++                                <input type="text" readonly value="<%= updateConfigUrl %>" id="configUrl">
++                                <button onclick="copySpecificUrl('configUrl')" class="btn secondary">Copiar</button>
++                            </div>
++                            <p class="text-muted" style="margin: .5rem 0 0;">Appupdate / APK:</p>
++                            <div class="url-box" style="margin-bottom: .75rem;">
++                                <input type="text" readonly value="<%= updateAppUpdateUrl %>" id="appUpdateUrl">
++                                <button onclick="copySpecificUrl('appUpdateUrl')" class="btn secondary">Copiar</button>
++                            </div>
++                            <p class="text-muted" style="margin: .5rem 0 0;">Tema:</p>
++                            <div class="url-box" style="margin-bottom: .75rem;">
++                                <input type="text" readonly value="<%= updateThemeUrl %>" id="themeUrl">
++                                <button onclick="copySpecificUrl('themeUrl')" class="btn secondary">Copiar</button>
++                            </div>
++                            <p class="text-muted" style="margin: .5rem 0 0;">SMS:</p>
++                            <div class="url-box" style="margin-bottom: 0;">
++                                <input type="text" readonly value="<%= updateSmsUrl %>" id="smsUrl">
++                                <button onclick="copySpecificUrl('smsUrl')" class="btn secondary">Copiar</button>
++                            </div>
++                        </div>
++                    </details>
+                 </div>
+ 
+                 <div class="card-grid">
+@@ -446,6 +462,17 @@
+                             <label>E-mail</label>
+                             <input type="email" v-model="profile.email" placeholder="voce@email.com">
+                         </div>
++                        <div class="form-group full-width">
++                            <label>UUID de atualização</label>
++                            <div class="url-box">
++                                <input type="text" :value="profile.updateUuid" id="profileUpdateUuid" readonly style="background-color: rgba(255,255,255,0.05); color: #9fc5ff; cursor: not-allowed;">
++                                <button type="button" class="btn secondary" onclick="copySpecificUrl('profileUpdateUuid')">Copiar</button>
++                            </div>
++                            <small class="text-muted">Use este UUID no aplicativo para resolver todas as atualizações deste painel. Regenerar invalida o UUID anterior.</small>
++                            <div style="margin-top:.65rem;">
++                                <button type="button" class="btn danger small" :disabled="profileSaving" @click="regenerateUpdateUuid">Gerar novo UUID</button>
++                            </div>
++                        </div>
+                         <div class="form-group">
+                             <label>Plano</label>
+                             <input type="text" :value="profile.plan || '—'" readonly style="background-color: rgba(255,255,255,0.05); color: #9fc5ff; cursor: not-allowed;">
+@@ -750,6 +777,8 @@
+                     profile: {
+                         username: '<%= user.username %>',
+                         email: '<%= user.email || "" %>',
++                        updateUuid: '<%= user.updateUuid || "" %>',
++                        updateUrl: '<%= updateUrl %>',
+                         plan: '<%= user.plan || "trial" %>',
+                         expiresAt: '<%= user.expiresAt || "" %>',
+                         active: <%= (user.active !== false) ? 'true' : 'false' %>,
+@@ -885,12 +914,36 @@
+                         if (!response.ok) return;
+                         this.profile.username = data.username || this.profile.username;
+                         this.profile.email = data.email || '';
++                        this.profile.updateUuid = data.updateUuid || this.profile.updateUuid;
++                        this.profile.updateUrl = data.updateUrl || this.profile.updateUrl;
+                         this.profile.plan = data.plan || this.profile.plan;
+                         this.profile.expiresAt = data.expiresAt || '';
+                         this.profile.active = data.active !== false;
+                         this.profile.isAdmin = !!data.isAdmin;
+                     } catch (e) { /* ignore */ }
+                 },
++                async regenerateUpdateUuid() {
++                    if (!confirm('Gerar um novo UUID? O UUID anterior deixará de funcionar imediatamente.')) return;
++                    this.profileSaving = true;
++                    this.profileMsg = '';
++                    this.profileError = '';
++                    try {
++                        const response = await fetch('/api/profile/update-uuid/regenerate', {
++                            method: 'POST',
++                            headers: { 'Accept': 'application/json' }
++                        });
++                        const data = await response.json().catch(() => ({}));
++                        if (!response.ok) throw new Error(data.error || 'Falha ao gerar novo UUID');
++                        this.profile.updateUuid = data.updateUuid || '';
++                        this.profile.updateUrl = data.updateUrl || '';
++                        this.profileMsg = '✅ Novo UUID gerado!';
++                        setTimeout(() => { this.profileMsg = ''; }, 3500);
++                    } catch (err) {
++                        this.profileError = err.message || 'Erro ao gerar novo UUID';
++                    } finally {
++                        this.profileSaving = false;
++                    }
++                },
+                 async saveProfile() {
+                     this.profileSaving = true;
+                     this.profileMsg = '';
+-- 
+2.43.0
+

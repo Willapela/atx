@@ -1,0 +1,631 @@
+/* =========================================================================
+   CLEAN THEME — visual claro e minimalista para o ATX Config Panel
+   Carregar SEMPRE depois de /css/style.css. Este arquivo não remove nenhuma
+   função do painel: só troca cores, remove gradientes/blur/sombras pesadas
+   e deixa os cards planos (flat) e com bordas simples.
+   ========================================================================= */
+
+/* ---------- 1. Variáveis base (tudo que usa var() se ajusta sozinho) ---- */
+:root {
+    --bg-color: #f4f5f7;
+    --card-bg: #ffffff;
+    --border-color: #e2e5ea;
+    --text-primary: #1e2433;
+    --text-muted: #6b7480;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --danger: #dc2626;
+    --danger-hover: #b91c1c;
+    --input-bg: #f8f9fb;
+
+    --surface-0: #ffffff;
+    --surface-1: #ffffff;
+    --surface-2: #f4f5f7;
+    --surface-3: #f8f9fb;
+    --accent: #2563eb;
+    --accent-strong: #1d4ed8;
+    --accent-soft: rgba(37, 99, 235, 0.08);
+    --border-soft: #e2e5ea;
+    --shadow-soft: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+}
+
+/* ---------- 2. Fundo geral: sem gradiente, sem textura de grade -------- */
+body,
+body.dashboard-body,
+.auth-body {
+    background-color: var(--bg-color) !important;
+    background-image: none !important;
+    color: var(--text-primary);
+}
+body.dashboard-body::before,
+.auth-body::after,
+body.dashboard-body .page-header::after,
+body.dashboard-body .nav-item.active::after {
+    display: none !important;
+}
+
+h1, h2, h3, h4, h5, h6 { color: var(--text-primary); }
+
+/* ---------- 3. Cards, containers e listas: planos, sem gradiente ------- */
+.glass-container,
+.config-card,
+.list-item,
+body.dashboard-body .glass-container,
+body.dashboard-body .config-card,
+body.dashboard-body .list-item {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-soft) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+body.dashboard-body .config-card:hover {
+    border-color: #cdd6e6 !important;
+    box-shadow: var(--shadow-soft) !important;
+    transform: none !important;
+}
+.list-item:hover,
+body.dashboard-body .list-item:hover {
+    background: #fafbfc !important;
+    border-color: #cdd6e6 !important;
+    box-shadow: var(--shadow-soft) !important;
+    transform: none !important;
+}
+.list-item-title { color: var(--text-primary) !important; }
+.list-item-subtitle { color: var(--text-muted) !important; }
+
+/* ---------- 4. Sidebar e cabeçalho mobile ------------------------------- */
+.sidebar,
+body.dashboard-body .sidebar {
+    background: #ffffff !important;
+    border-right: 1px solid var(--border-color) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+}
+.mobile-header,
+body.dashboard-body .mobile-header {
+    background: #ffffff !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    color: var(--text-primary);
+}
+.mobile-header .brand,
+.menu-toggle,
+.brand-name { color: var(--text-primary) !important; }
+.mobile-menu-left {
+    background: var(--surface-2) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.brand-mark,
+.auth-mark,
+body.dashboard-body .brand-mark {
+    background: var(--primary) !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #fff !important;
+}
+
+.menu-label,
+body.dashboard-body .menu-label { color: #9aa3b2 !important; }
+
+.nav-item,
+body.dashboard-body .nav-item {
+    color: var(--text-muted) !important;
+    background: transparent !important;
+    border-color: transparent !important;
+}
+.nav-item:hover, .nav-item.active,
+body.dashboard-body .nav-item:hover,
+body.dashboard-body .nav-item.active {
+    background: var(--accent-soft) !important;
+    color: var(--primary) !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+.nav-item.active,
+body.dashboard-body .nav-item.active {
+    border-left: 3px solid var(--primary) !important;
+}
+.nav-icon { color: inherit !important; border-color: var(--border-color) !important; background: transparent !important; }
+.nav-item.active .nav-icon,
+body.dashboard-body .nav-item.active .nav-icon {
+    background: #dbe6fd !important;
+    border-color: transparent !important;
+    color: var(--primary) !important;
+    box-shadow: none !important;
+}
+
+.sidebar-footer,
+body.dashboard-body .sidebar-footer {
+    border-top: 1px solid var(--border-color) !important;
+    background: transparent !important;
+}
+.avatar,
+body.dashboard-body .avatar {
+    background: var(--primary) !important;
+    box-shadow: none !important;
+    color: #fff !important;
+}
+
+.brand-logo-image { filter: none !important; }
+
+/* ---------- 5. Cabeçalho de página -------------------------------------- */
+.page-header,
+body.dashboard-body .page-header {
+    border-bottom: 1px solid var(--border-color) !important;
+}
+.eyebrow { color: var(--primary) !important; opacity: .85; }
+.page-title,
+body.dashboard-body .page-title {
+    color: var(--text-primary) !important;
+    text-shadow: none !important;
+}
+.text-muted { color: var(--text-muted) !important; }
+
+/* ---------- 6. Seções internas dos cards -------------------------------- */
+.section-title,
+body.dashboard-body .section-title {
+    color: var(--primary) !important;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* ---------- 7. Formulários ------------------------------------------------ */
+.form-group label { color: #8a93a3 !important; }
+.form-group input,
+.form-group textarea,
+.form-group select,
+body.dashboard-body .form-group input,
+body.dashboard-body .form-group textarea,
+body.dashboard-body .form-group select {
+    background: var(--surface-3) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+    box-shadow: none !important;
+}
+.form-group input:hover,
+.form-group textarea:hover,
+.form-group select:hover,
+body.dashboard-body .form-group input:hover,
+body.dashboard-body .form-group textarea:hover,
+body.dashboard-body .form-group select:hover {
+    border-color: #b9c3d6 !important;
+}
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus,
+body.dashboard-body .form-group input:focus,
+body.dashboard-body .form-group textarea:focus,
+body.dashboard-body .form-group select:focus {
+    background: #ffffff !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px var(--accent-soft) !important;
+}
+.form-group select {
+    background-image: linear-gradient(45deg, transparent 50%, #8a93a3 50%), linear-gradient(135deg, #8a93a3 50%, transparent 50%) !important;
+}
+.field-help { color: var(--text-muted) !important; }
+.field-help code {
+    background: var(--surface-2) !important;
+    border-color: var(--border-color) !important;
+    color: var(--primary) !important;
+}
+.server-form > .form-group:first-child {
+    background: var(--surface-2) !important;
+    border: 1px solid var(--border-color) !important;
+}
+.server-form > .form-group:first-child label { color: var(--text-primary) !important; }
+.server-form > .form-group:first-child select { background-color: #ffffff !important; border-color: var(--border-color) !important; }
+.server-form > .form-group:first-child .text-muted,
+.server-form .text-muted { color: var(--text-muted) !important; }
+
+/* ---------- 8. Botões ------------------------------------------------------ */
+.btn, body.dashboard-body .btn { box-shadow: none !important; }
+.btn.primary, body.dashboard-body .btn.primary {
+    background: var(--primary) !important;
+    color: #fff !important;
+}
+.btn.primary:hover, body.dashboard-body .btn.primary:hover {
+    background: var(--primary-hover) !important;
+    transform: none !important;
+}
+.btn.secondary, body.dashboard-body .btn.secondary {
+    background: var(--surface-2) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+}
+.btn.secondary:hover, body.dashboard-body .btn.secondary:hover { background: #e9ecf1 !important; }
+.btn.danger, body.dashboard-body .btn.danger {
+    background: #fef2f2 !important;
+    color: var(--danger) !important;
+    border: 1px solid #fecaca !important;
+}
+.btn.danger:hover, body.dashboard-body .btn.danger:hover { background: var(--danger) !important; color: #fff !important; }
+body.dashboard-body .floating-save-bar .btn.primary:disabled {
+    background: #e5e8ee !important;
+    color: #9aa3b2 !important;
+    box-shadow: none !important;
+}
+
+.url-box, body.dashboard-body .url-box {
+    background: var(--surface-3) !important;
+    border: 1px solid var(--border-color) !important;
+}
+.url-box input { color: var(--accent-strong) !important; }
+
+#jsonEditor {
+    background: #f8f9fb !important;
+    border-color: var(--border-color) !important;
+    color: #1d4ed8 !important;
+    box-shadow: none !important;
+}
+
+/* ---------- 9. Modais ------------------------------------------------------ */
+.modal-overlay { background: rgba(30, 36, 51, 0.45) !important; backdrop-filter: none !important; }
+.modal-content {
+    background: #ffffff !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 20px 50px rgba(16, 24, 40, 0.18) !important;
+}
+.modal-header { border-bottom: 1px solid var(--border-color) !important; }
+.modal-header h3 { color: var(--text-primary) !important; }
+.modal-close {
+    background: var(--surface-2) !important;
+    color: var(--text-muted) !important;
+}
+.modal-close:hover { background: #fef2f2 !important; color: var(--danger) !important; }
+.modal-footer { border-top: 1px solid var(--border-color) !important; background: transparent !important; }
+
+/* ---------- 10. Barra de salvar e toast ------------------------------------ */
+.floating-save-bar, body.dashboard-body .floating-save-bar {
+    background: #ffffff !important;
+    border-top: 1px solid var(--border-color) !important;
+    box-shadow: 0 -6px 18px rgba(16, 24, 40, 0.06) !important;
+    backdrop-filter: none !important;
+}
+.floating-save-bar .save-status,
+.save-status-inline,
+.servers-import-msg { color: #059669 !important; }
+.floating-save-bar .save-status.save-status-pending { color: #b45309 !important; }
+.save-toast {
+    background: #ffffff !important;
+    border: 1px solid #a7f3d0 !important;
+    color: #059669 !important;
+    box-shadow: 0 10px 24px rgba(16, 24, 40, 0.12) !important;
+}
+
+/* ---------- 11. SMS / APK / CDN --------------------------------------------- */
+.sms-preview {
+    background: var(--surface-3) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+.apk-upload-box {
+    background: var(--surface-2) !important;
+    border: 1px dashed #c7cfdc !important;
+}
+.apk-upload-box code { color: var(--accent-strong) !important; }
+.cdn-status.is-online {
+    color: #059669 !important;
+    background: #ecfdf5 !important;
+    border-color: #a7f3d0 !important;
+}
+.cdn-status.is-offline {
+    color: #dc2626 !important;
+    background: #fef2f2 !important;
+    border-color: #fecaca !important;
+}
+
+/* ---------- 12. Seletor de modo (mode-picker) ------------------------------- */
+.mode-picker-field {
+    background: var(--surface-2) !important;
+    border: 1px solid var(--border-color) !important;
+}
+.mode-picker-heading label { color: var(--text-primary) !important; }
+.mode-picker-heading small,
+.mode-option-copy small { color: var(--text-muted) !important; }
+.mode-current-badge {
+    background: var(--accent-soft) !important;
+    border: 1px solid #bcd2fb !important;
+    color: var(--primary) !important;
+}
+.mode-option {
+    background: #ffffff !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+.mode-option:hover {
+    background: var(--accent-soft) !important;
+    border-color: #bcd2fb !important;
+    transform: none !important;
+}
+.mode-option.active {
+    background: var(--accent-soft) !important;
+    border-color: var(--primary) !important;
+    box-shadow: none !important;
+    color: var(--primary) !important;
+}
+.mode-option-icon { background: var(--surface-2) !important; color: var(--text-muted) !important; }
+.mode-option.active .mode-option-icon { background: var(--primary) !important; color: #fff !important; }
+.mode-option-check { color: var(--primary) !important; }
+
+/* ---------- 13. Cards de status da Visão Geral ------------------------------ */
+.status-summary-card {
+    background: #ffffff !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-soft) !important;
+}
+.status-summary-card::after { display: none !important; }
+.status-summary-card:hover {
+    border-color: #cdd6e6 !important;
+    box-shadow: var(--shadow-soft) !important;
+    transform: none !important;
+}
+.status-summary-label { color: #9aa3b2 !important; }
+.status-summary-value { color: var(--text-primary) !important; }
+.status-summary-detail { color: var(--text-muted) !important; }
+.status-summary-dot { box-shadow: none !important; }
+
+.overview-sync-card {
+    background: #ecfdf5 !important;
+    border: 1px solid #a7f3d0 !important;
+}
+.overview-sync-card.pending { background: #fffbeb !important; border-color: #fde68a !important; }
+.overview-sync-icon { background: #d1fae5 !important; border-color: transparent !important; color: #059669 !important; }
+.overview-sync-card.pending .overview-sync-icon { background: #fef3c7 !important; color: #b45309 !important; }
+.overview-sync-copy strong { color: #065f46 !important; }
+.overview-sync-card.pending .overview-sync-copy strong { color: #92400e !important; }
+.overview-sync-copy span { color: var(--text-muted) !important; }
+.overview-sync-state { color: #059669 !important; }
+.overview-sync-card.pending .overview-sync-state { color: #b45309 !important; }
+
+/* ---------- 14. Telas de login / registro / senha --------------------------- */
+.auth-box {
+    background: #ffffff !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 10px 30px rgba(16, 24, 40, 0.08) !important;
+}
+.auth-eyebrow { color: var(--primary) !important; opacity: .85; }
+.logo-area h2 { color: var(--text-primary) !important; }
+.logo-area p { color: var(--text-muted) !important; }
+.auth-forgot a, .auth-footer a { color: var(--primary) !important; }
+.auth-footer { color: var(--text-muted) !important; }
+.alert {
+    background: #fef2f2 !important;
+    border: 1px solid #fecaca !important;
+    color: var(--danger) !important;
+}
+/* ===== Servers section — cards modernos ===== */
+.servers-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    text-align: left;
+    gap: 1.25rem;
+}
+
+.servers-header > div:first-child {
+    width: auto;
+    flex: 1;
+    min-width: 0;
+}
+
+.servers-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    width: 220px;
+    max-width: 100%;
+    margin: 0;
+}
+
+.servers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.server-card {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e2e5ea);
+    border-radius: 14px;
+    padding: 1.1rem 1.15rem;
+    cursor: pointer;
+    transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+}
+
+.server-card:hover {
+    border-color: #bcd2fb;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
+    transform: translateY(-2px);
+}
+
+.server-card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.server-card-flag {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: var(--surface-2, #f4f5f7);
+    border: 1px solid var(--border-color, #e2e5ea);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.server-card-flag img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.server-card-flag-fallback {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--primary, #2563eb);
+    background: rgba(37, 99, 235, 0.08);
+}
+
+.server-card-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.server-card-name {
+    font-weight: 650;
+    font-size: 1.05rem;
+    color: var(--text-primary, #1e2433);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.server-card-desc {
+    font-size: 0.82rem;
+    color: var(--text-muted, #6b7480);
+    margin-top: 0.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.server-mode-badge {
+    font-size: 0.7rem;
+    font-weight: 650;
+    letter-spacing: 0.02em;
+    padding: 0.28rem 0.55rem;
+    border-radius: 999px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    background: #eef2ff;
+    color: #4338ca;
+    border: 1px solid #c7d2fe;
+}
+
+.server-mode-badge.mode-tlsws { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
+.server-mode-badge.mode-xhttp { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+.server-mode-badge.mode-proxy { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+.server-mode-badge.mode-ssl   { background: #f0f9ff; color: #0369a1; border-color: #bae6fd; }
+.server-mode-badge.mode-direct{ background: #f8fafc; color: #475569; border-color: #e2e8f0; }
+
+.server-card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.65rem 0.75rem;
+    background: var(--surface-3, #f8f9fb);
+    border-radius: 10px;
+    border: 1px solid var(--border-color, #e2e5ea);
+}
+
+.server-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.server-meta-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted, #6b7480);
+    width: 42px;
+    flex-shrink: 0;
+}
+
+.server-meta-item code {
+    font-size: 0.8rem;
+    color: var(--text-primary, #1e2433);
+    background: transparent;
+    padding: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.server-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.server-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.server-tag {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.2rem 0.45rem;
+    border-radius: 6px;
+    background: rgba(37, 99, 235, 0.08);
+    color: var(--primary, #2563eb);
+}
+
+.server-tag.muted {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.servers-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background: var(--card-bg, #fff);
+    border: 1px dashed var(--border-color, #e2e5ea);
+    border-radius: 16px;
+    margin-top: 0.5rem;
+}
+
+.servers-empty-icon {
+    color: var(--text-muted, #6b7480);
+    margin-bottom: 0.75rem;
+    opacity: 0.7;
+}
+
+.servers-empty h3 {
+    margin: 0 0 0.35rem;
+    font-size: 1.15rem;
+    color: var(--text-primary, #1e2433);
+}
+
+.servers-empty p {
+    margin: 0 0 1.25rem;
+}
+
+.servers-save-hint {
+    margin-top: 1.25rem;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+    .servers-grid {
+        grid-template-columns: 1fr;
+    }
+    .servers-actions {
+        width: 100%;
+    }
+}
