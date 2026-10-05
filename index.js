@@ -91,7 +91,7 @@ function parseUserConfig(user) {
     try {
         const config = JSON.parse(user.config_json || '{}');
         // MantÃ©m apenas o contrato ATX TUNNEL e metadados internos necessÃ¡rios ao painel.
-        const allowedRootKeys = ['Version', 'VersionName', 'AppVersion', 'UpdateApk', 'Actualization', 'UdpPort', 'Contato', 'Site', 'Theme', 'Servers', 'Sms'];
+        const allowedRootKeys = ['Version', 'VersionName', 'AppVersion', 'UpdateApk', 'Actualization', 'UdpPort', 'Contato', 'Site', 'WebView', 'Html', 'Theme', 'Servers', 'Sms'];
         Object.keys(config).forEach((key) => {
             if (!allowedRootKeys.includes(key)) delete config[key];
         });
@@ -198,11 +198,15 @@ function buildAtxConfig(req, user) {
         CheckPop: 'true',
         CorMenu: String(theme.ColorOne ?? '#000000'),
         CorBtcu: String(theme.ColorButtons ?? '#ff0000'),
-        WebView: '',
+        WebView: String(stored.WebView ?? (stored.Html && stored.Html.WebView) ?? ''),
         Roteador: 'true',
         StatusIf: 'false',
         IconCor: '#ffffff',
-        Html: { WebView: '', HtmlUse: 'false', HtmlAPP: '' },
+        Html: {
+            WebView: String((stored.Html && stored.Html.WebView) ?? stored.WebView ?? ''),
+            HtmlUse: (stored.Html && String(stored.Html.HtmlUse) === 'true') ? 'true' : 'false',
+            HtmlAPP: String((stored.Html && stored.Html.HtmlAPP) ?? '')
+        },
         Background: { Cor: String(theme.ColorTwo ?? '#000000'), Borda: '35' },
         Border: { Cor: String(theme.ColorButtons ?? '#ff0000'), Borda: '14' },
         Servers: servers
@@ -1039,6 +1043,14 @@ function normalizeConfigPayload(nextConfig, currentConfig = null) {
     nextConfig.Actualization = (nextConfig.Actualization === true || nextConfig.Actualization === 'true' || nextConfig.Actualization === 1 || nextConfig.Actualization === '1')
         ? 'true'
         : 'false';
+
+    const htmlIn = (nextConfig.Html && typeof nextConfig.Html === 'object') ? nextConfig.Html : {};
+    nextConfig.Html = {
+        WebView: String(htmlIn.WebView ?? nextConfig.WebView ?? ''),
+        HtmlUse: (htmlIn.HtmlUse === true || htmlIn.HtmlUse === 'true' || htmlIn.HtmlUse === 1 || htmlIn.HtmlUse === '1') ? 'true' : 'false',
+        HtmlAPP: String(htmlIn.HtmlAPP ?? '')
+    };
+    nextConfig.WebView = String(nextConfig.WebView ?? nextConfig.Html.WebView ?? '');
 
     const smsIn = (nextConfig.Sms && typeof nextConfig.Sms === 'object') ? nextConfig.Sms : {};
     nextConfig.Sms = {

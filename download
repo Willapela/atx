@@ -1,0 +1,4 @@
+public/updates/config.local
+data/users/*.json
+node_modules/
+.env
