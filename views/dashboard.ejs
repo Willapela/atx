@@ -213,6 +213,31 @@
                     </div>
                     <p class="text-muted" style="margin-top: 1rem;">O tema será salvo pelo botão <strong>Salvar Configurações</strong> na barra inferior.</p>
                 </div>
+
+                <div class="glass-container config-card" style="margin-top: 1.25rem;">
+                    <h3 class="section-title" style="margin-top:0;">WebView / HTML do aplicativo</h3>
+                    <p class="text-muted">Configure uma página externa ou HTML incorporado para a área WebView do ATX TUNNEL.</p>
+                    <div class="card-grid form-grid-2">
+                        <div class="form-group">
+                            <label>Ativar HTML incorporado</label>
+                            <select v-model="config.Html.HtmlUse">
+                                <option value="false">Desativado</option>
+                                <option value="true">Ativado</option>
+                            </select>
+                            <small class="text-muted">Quando ativado, o app pode usar o conteúdo de <code>HtmlAPP</code>.</small>
+                        </div>
+                        <div class="form-group">
+                            <label>URL do WebView</label>
+                            <input type="url" v-model="config.Html.WebView" placeholder="https://seu-dominio.com/pagina">
+                            <small class="text-muted">Página externa exibida pelo aplicativo.</small>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>HTML incorporado</label>
+                            <textarea v-model="config.Html.HtmlAPP" rows="8" placeholder="<div>Conteúdo exibido no ATX TUNNEL</div>"></textarea>
+                            <small class="text-muted">Use apenas HTML/CSS confiável. O conteúdo será publicado dentro do JSON ATX.</small>
+                        </div>
+                    </div>
+                </div>
             </div>
 
 <!-- Servers Section -->
@@ -542,6 +567,12 @@
                 initialConfig.Actualization = (initialConfig.Actualization === true || initialConfig.Actualization === 'true' || initialConfig.Actualization === 1 || initialConfig.Actualization === '1')
                     ? 'true'
                     : 'false';
+                initialConfig.WebView = String(initialConfig.WebView ?? '');
+                initialConfig.Html = Object.assign({ WebView: '', HtmlUse: 'false', HtmlAPP: '' }, (initialConfig.Html && typeof initialConfig.Html === 'object') ? initialConfig.Html : {});
+                initialConfig.Html.WebView = String(initialConfig.Html.WebView ?? initialConfig.WebView ?? '');
+                initialConfig.Html.HtmlUse = (initialConfig.Html.HtmlUse === true || initialConfig.Html.HtmlUse === 'true' || initialConfig.Html.HtmlUse === 1 || initialConfig.Html.HtmlUse === '1') ? 'true' : 'false';
+                initialConfig.Html.HtmlAPP = String(initialConfig.Html.HtmlAPP ?? '');
+                initialConfig.WebView = initialConfig.Html.WebView;
                 initialConfig.Sms = Object.assign(
                     { Version: '1', Update: '', Notes: '' },
                     (initialConfig.Sms && typeof initialConfig.Sms === 'object') ? initialConfig.Sms : {}
