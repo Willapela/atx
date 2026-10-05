@@ -180,56 +180,6 @@
                     <p class="text-muted" style="margin-top: 1rem;">As alterações serão gravadas pelo botão <strong>Salvar Configurações</strong> na barra inferior.</p>
                 </div>
 
-                <div class="glass-container config-card" style="margin-top: 1.25rem;">
-                    <h3 class="section-title" style="margin-top:0;">Atualização do aplicativo (APK)</h3>
-                    <p class="text-muted">Configure a versão do aplicativo e o endereço do APK. O endpoint abaixo publica estes dados para o app.</p>
-                    <div class="card-grid form-grid-2">
-                        <div class="form-group">
-                            <label>Versão interna (versionCode)</label>
-                            <input type="number" min="1" step="1" v-model.number="config.AppVersion" placeholder="25">
-                            <small class="text-muted">Use um número maior que o versionCode instalado para oferecer uma atualização.</small>
-                        </div>
-                        <div class="form-group">
-                            <label>Versão exibida (versionName)</label>
-                            <input type="text" v-model="config.VersionName" placeholder="3.0">
-                            <small class="text-muted">O APK enviado tem versionName 3.0 e versionCode 25, apesar do nome “6.0”.</small>
-                        </div>
-                        <div class="form-group full-width">
-                            <label>URL do APK (UpdateApk)</label>
-                            <input type="url" v-model="config.UpdateApk" placeholder="https://seu-dominio.com/app.apk">
-                            <small class="text-muted">Prefira um link direto para o arquivo .apk. Uma página de compartilhamento do MediaFire pode baixar HTML em vez do APK.</small>
-                        </div>
-                        <div class="form-group full-width">
-                            <label>Ou envie o APK para este painel</label>
-                            <input ref="apkFileInput" type="file" accept=".apk,application/vnd.android.package-archive" @change="apkFile = $event.target.files && $event.target.files[0] ? $event.target.files[0] : null">
-                            <small class="text-muted">O painel hospeda o arquivo e preenche o link direto automaticamente (limite de 120 MB).</small>
-                            <div style="display:flex; gap:.75rem; flex-wrap:wrap; align-items:center; margin-top:.5rem;">
-                                <button type="button" class="btn secondary" :disabled="apkUploadBusy || !apkFile" @click="uploadApk">
-                                    {{ apkUploadBusy ? 'Enviando APK...' : 'Enviar APK e salvar' }}
-                                </button>
-                                <span v-if="apkUploadStatus" style="color:#059669; font-weight:600;">{{ apkUploadStatus }}</span>
-                                <span v-if="apkUploadError" style="color:#dc2626; font-weight:600;">{{ apkUploadError }}</span>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Forçar atualização</label>
-                            <select v-model="config.Actualization">
-                                <option value="false">Não</option>
-                                <option value="true">Sim</option>
-                            </select>
-                        </div>
-                        <div class="form-group full-width">
-                            <label>Endpoint de atualização para o aplicativo</label>
-                            <div class="url-box">
-                                <input type="text" readonly value="<%= updateAppUpdateUrl %>" id="atxAppUpdateUrl" style="background-color: #f4f5f7; color: #6b7480; cursor: not-allowed;">
-                                <button type="button" onclick="copySpecificUrl('atxAppUpdateUrl')" class="btn secondary">Copiar URL</button>
-                            </div>
-                            <small class="text-muted">Este endpoint é diferente da URL de configuração /atx/config.</small>
-                        </div>
-                    </div>
-                    <p class="text-muted" style="margin-top: 1rem;">Salve pelo botão <strong>Salvar Configurações</strong> na barra inferior.</p>
-                </div>
-
 
             </div>
 
@@ -659,10 +609,6 @@
                     importMsg: '',
                     importUrl: '',
                     importingUrl: false,
-                    apkFile: null,
-                    apkUploadBusy: false,
-                    apkUploadStatus: '',
-                    apkUploadError: '',
                     profile: {
                         username: '<%= user.username %>',
                         email: '<%= user.email || "" %>',
@@ -815,45 +761,6 @@
                     if (data.Theme) this.config.Theme = Object.assign({}, this.config.Theme || {}, data.Theme);
                     this.markGlobalSaved();
                     return data;
-                },
-                async uploadApk() {
-                    if (!this.apkFile) {
-                        this.apkUploadError = 'Selecione um arquivo .apk primeiro.';
-                        return;
-                    }
-                    const appVersion = Number(this.config.AppVersion);
-                    const versionName = String(this.config.VersionName || '').trim();
-                    if (!Number.isInteger(appVersion) || appVersion < 1 || !versionName) {
-                        this.apkUploadError = 'Informe a versão interna e a versão exibida do APK.';
-                        return;
-                    }
-                    this.apkUploadBusy = true;
-                    this.apkUploadStatus = '';
-                    this.apkUploadError = '';
-                    try {
-                        const formData = new FormData();
-                        formData.append('apk', this.apkFile);
-                        formData.append('AppVersion', String(appVersion));
-                        formData.append('VersionName', versionName);
-                        const response = await fetch('/api/apk/upload', {
-                            method: 'POST',
-                            headers: { 'Accept': 'application/json' },
-                            body: formData
-                        });
-                        const data = await response.json().catch(() => ({}));
-                        if (!response.ok) throw new Error(data.error || 'Falha no upload do APK.');
-                        this.config.UpdateApk = String(data.UpdateApk || data.apkUrl || '');
-                        this.config.AppVersion = Number(data.AppVersion || appVersion);
-                        this.config.VersionName = String(data.VersionName || versionName);
-                        await this.persistConfig();
-                        this.apkFile = null;
-                        if (this.$refs.apkFileInput) this.$refs.apkFileInput.value = '';
-                        this.apkUploadStatus = 'APK enviado e configurações salvas.';
-                    } catch (error) {
-                        this.apkUploadError = error.message || 'Não foi possível enviar o APK.';
-                    } finally {
-                        this.apkUploadBusy = false;
-                    }
                 },
                 async saveConfig() {
                     if (this.isSaving) return;
