@@ -1066,7 +1066,7 @@ function normalizeConfigPayload(nextConfig, currentConfig = null) {
         AppName: 'ATX TUNNEL'
     };
 
-    const allowedRootKeys = ['Version', 'VersionName', 'AppVersion', 'UpdateApk', 'Actualization', 'UdpPort', 'Contato', 'Site', 'Theme', 'Servers', 'Sms'];
+    const allowedRootKeys = ['Version', 'VersionName', 'AppVersion', 'UpdateApk', 'Actualization', 'UdpPort', 'Contato', 'Site', 'WebView', 'Html', 'Theme', 'Servers', 'Sms'];
     Object.keys(nextConfig).forEach((key) => {
         if (!allowedRootKeys.includes(key)) delete nextConfig[key];
     });
