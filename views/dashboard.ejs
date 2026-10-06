@@ -585,7 +585,7 @@
                                     <input type="password" v-model="config.Servers[modal.index].PASS">
                                 </div>
                             </div>
-                            <div v-if="['Direct','Proxy','Tlsws'].includes(config.Servers[modal.index].Info)" class="form-group grid-col-2">
+                            <div v-if="['Direct','Proxy','Tlsws','XHTTP'].includes(config.Servers[modal.index].Info)" class="form-group grid-col-2">
                                 <div class="grid-col-full">
                                     <label>Payload</label>
                                     <textarea v-model="config.Servers[modal.index].Payload" placeholder="GET /app8 HTTP/1.1[lf]Host: dominio.com[lf]Upgrade: websocket[lf][lf]"></textarea>
