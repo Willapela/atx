@@ -522,6 +522,49 @@
                                     <input type="text" v-model="config.Servers[modal.index].ServerPort" placeholder="443">
                                 </div>
                             </div>
+                            <div v-if="config.Servers[modal.index].Info === 'SSH_BHTTP'" class="form-group grid-col-2">
+                                <div>
+                                    <label>DT protocol</label>
+                                    <select v-model="config.Servers[modal.index].dt_protocol">
+                                        <option value="TCP">TCP</option>
+                                    </select>
+                                    <small class="field-help">Transporte usado pelo perfil DTunnel/BHTTP.</small>
+                                </div>
+                                <div>
+                                    <label>DT port</label>
+                                    <input type="number" min="1" max="65535" v-model.number="config.Servers[modal.index].dt_port" placeholder="8000">
+                                    <small class="field-help">Porta do listener BHTTP; não confundir com ServerPort.</small>
+                                </div>
+                            </div>
+                            <div v-if="config.Servers[modal.index].Info === 'SSH_BHTTP'" class="form-group grid-col-2">
+                                <div>
+                                    <label>Modo BHTTP</label>
+                                    <select v-model="config.Servers[modal.index].bhttp_config.mode">
+                                        <option value="AUTO">AUTO</option>
+                                        <option value="BHP1">BHP1</option>
+                                        <option value="BHP2">BHP2</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Capability probe</label>
+                                    <select v-model="config.Servers[modal.index].bhttp_config.capability_probe">
+                                        <option :value="false">Desativado (BHP1)</option>
+                                        <option :value="true">Ativado (BHP2)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div v-if="config.Servers[modal.index].Info === 'SSH_BHTTP'" class="form-group grid-col-2">
+                                <div>
+                                    <label>Upload: bloco / conexões</label>
+                                    <input type="text" v-model="bhttpUploadSummary" readonly>
+                                    <small class="field-help">Use o JSON exportado para ajustar os valores avançados.</small>
+                                </div>
+                                <div>
+                                    <label>Download: bloco / conexões</label>
+                                    <input type="text" v-model="bhttpDownloadSummary" readonly>
+                                    <small class="field-help">Os parâmetros são publicados no bhttp_config.</small>
+                                </div>
+                            </div>
                             <div class="form-group grid-col-2">
                                 <div>
                                     <label>FLAG (URL)</label>
@@ -639,14 +682,28 @@
                     Name: '', ColorName: '#ffffff', Description: '', ColorDescription: '#ffffff',
                     FLAG: '', ServerIP: '', ServerPort: '443', CheckUser: '', USER: '', PASS: '',
                     Payload: '', ProxyIP: '', ProxyPort: '443', SNI: '', Path: '', TLSVersion: 'TLSv1.2',
-                    Color: '#0000ff', Info: 'Tlsws'
+                    Color: '#0000ff', Info: 'Tlsws', mode: '', dt_protocol: 'TCP', dt_port: '8000',
+                    tls_version: 'TLSv1.2', bhttp_config: {
+                        schema_version: 1, mode: 'AUTO', capability_probe: false,
+                        upload: { chunk_size: 32768, connections: 16, requests_per_connection: 1, max_attempts: 10, retry_backoff_ms: 150 },
+                        download: { chunk_size: 30000, connections: 32, requests_per_connection: 1, max_attempts: 10, retry_backoff_ms: 150 },
+                        timeouts: { dns_ms: 5000, connect_ms: 15000, read_ms: 30000, probe_ms: 8000, shutdown_ms: 5000 }
+                    }
                 };
                 const atxKeys = Object.keys(serverDefaults);
                 initialConfig.Servers = initialConfig.Servers.map(server => {
                     const normalized = {};
-                    atxKeys.forEach(key => { normalized[key] = server[key] ?? serverDefaults[key]; });
-                    normalized.Info = ['Ssl', 'Direct', 'Proxy', 'Tlsws', 'XHTTP'].includes(server.Info)
-                        ? server.Info : (['Ssl', 'Direct', 'Proxy', 'Tlsws', 'XHTTP'].includes(server.TYPE) ? server.TYPE : 'Tlsws');
+                    atxKeys.forEach(key => {
+                        normalized[key] = key === 'bhttp_config'
+                            ? JSON.parse(JSON.stringify(server[key] || server.bhttp || serverDefaults[key]))
+                            : (server[key] ?? serverDefaults[key]);
+                    });
+                    normalized.Info = ['Ssl', 'Direct', 'Proxy', 'Tlsws', 'XHTTP', 'SSH_BHTTP'].includes(server.Info)
+                        ? server.Info : (['Ssl', 'Direct', 'Proxy', 'Tlsws', 'XHTTP', 'SSH_BHTTP'].includes(server.TYPE) ? server.TYPE : (server.mode === 'SSH_BHTTP' ? 'SSH_BHTTP' : 'Tlsws'));
+                    normalized.mode = normalized.Info === 'SSH_BHTTP' ? 'SSH_BHTTP' : '';
+                    normalized.dt_protocol = String(server.dt_protocol || 'TCP').toUpperCase();
+                    normalized.dt_port = Number(server.dt_port || 8000);
+                    normalized.tls_version = String(server.tls_version || server.TLSVersion || 'TLSv1.2');
                     return normalized;
                 });
                 
@@ -687,14 +744,15 @@
                 return {
                     activeMenu: ['dashboard','general','layout','contribute','servers','profile'].includes(localStorage.getItem('activeMenu')) ? localStorage.getItem('activeMenu') : 'dashboard',
                     connectionModes: [
-                        'Ssl', 'Direct', 'Proxy', 'Tlsws', 'XHTTP'
+                        'Ssl', 'Direct', 'Proxy', 'Tlsws', 'XHTTP', 'SSH_BHTTP'
                     ],
                     modeDescriptions: {
                         Ssl: 'SSL direto: o app usa ServerIP, ServerPort e SNI, sem proxy personalizado.',
                         Direct: 'Direct: conexão direta; o app usa ServerIP, ServerPort e Payload.',
                         Proxy: 'Proxy: o app usa ServerIP, ServerPort, ProxyIP, ProxyPort e Payload.',
                         Tlsws: 'Tlsws: o app usa servidor, porta, proxy, payload e SNI.',
-                        XHTTP: 'XHTTP: o app usa servidor, porta, proxy, SNI e Path. O padrão de Path é /ssh.'
+                        XHTTP: 'XHTTP: o app usa servidor, porta, proxy, SNI e Path. O padrão de Path é /ssh.',
+                        SSH_BHTTP: 'SSH BHTTP: publica TCP/DT port e parâmetros BHP1/BHP2 para o cliente compatível.'
                     },
                     config: initialConfig,
                     savedGlobalSnapshot: JSON.stringify((() => { const snapshot = JSON.parse(JSON.stringify(initialConfig)); delete snapshot.Sms; return snapshot; })()),
@@ -736,6 +794,18 @@
             computed: {
                 isActualizationOn() {
                     return this.config.Actualization === 'true' || this.config.Actualization === true;
+                },
+                activeServer() {
+                    return this.modal.type === 'Servers' && this.config.Servers[this.modal.index]
+                        ? this.config.Servers[this.modal.index] : null;
+                },
+                bhttpUploadSummary() {
+                    const b = this.activeServer?.bhttp_config?.upload || {};
+                    return `${b.chunk_size || 32768} bytes · ${b.connections || 16} conexões`;
+                },
+                bhttpDownloadSummary() {
+                    const b = this.activeServer?.bhttp_config?.download || {};
+                    return `${b.chunk_size || 30000} bytes · ${b.connections || 32} conexões`;
                 },
             },
             watch: {
@@ -1007,6 +1077,21 @@
                 onConnectionModeChange() {
                     // Preserva Payload e porta ao alternar modos; a troca de
                     // transporte não deve apagar dados que o usuário já salvou.
+                    const server = this.activeServer;
+                    if (!server || server.Info !== 'SSH_BHTTP') return;
+                    server.mode = 'SSH_BHTTP';
+                    server.dt_protocol = String(server.dt_protocol || 'TCP').toUpperCase();
+                    server.dt_port = Number(server.dt_port || 8000);
+                    const defaults = {
+                        schema_version: 1, mode: 'AUTO', capability_probe: false,
+                        upload: { chunk_size: 32768, connections: 16, requests_per_connection: 1, max_attempts: 10, retry_backoff_ms: 150 },
+                        download: { chunk_size: 30000, connections: 32, requests_per_connection: 1, max_attempts: 10, retry_backoff_ms: 150 },
+                        timeouts: { dns_ms: 5000, connect_ms: 15000, read_ms: 30000, probe_ms: 8000, shutdown_ms: 5000 }
+                    };
+                    server.bhttp_config = Object.assign({}, defaults, server.bhttp_config || {});
+                    server.bhttp_config.upload = Object.assign({}, defaults.upload, server.bhttp_config.upload || {});
+                    server.bhttp_config.download = Object.assign({}, defaults.download, server.bhttp_config.download || {});
+                    server.bhttp_config.timeouts = Object.assign({}, defaults.timeouts, server.bhttp_config.timeouts || {});
                 },
                 addServer() {
                     this.config.Servers.push({
@@ -1027,7 +1112,14 @@
                         Path: "",
                         TLSVersion: "TLSv1.2",
                         Color: "#0000ff",
-                        Info: "Tlsws"
+                        Info: "Tlsws",
+                        mode: '', dt_protocol: 'TCP', dt_port: 8000, tls_version: 'TLSv1.2',
+                        bhttp_config: {
+                            schema_version: 1, mode: 'AUTO', capability_probe: false,
+                            upload: { chunk_size: 32768, connections: 16, requests_per_connection: 1, max_attempts: 10, retry_backoff_ms: 150 },
+                            download: { chunk_size: 30000, connections: 32, requests_per_connection: 1, max_attempts: 10, retry_backoff_ms: 150 },
+                            timeouts: { dns_ms: 5000, connect_ms: 15000, read_ms: 30000, probe_ms: 8000, shutdown_ms: 5000 }
+                        }
                     });
                     this.editItem('Servers', this.config.Servers.length - 1);
                 },
