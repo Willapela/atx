@@ -143,6 +143,22 @@ function buildUpdateEntryUrl(req, uuid) {
     return `${requestBaseUrl(req)}/u/${encodeURIComponent(uuid)}`;
 }
 
+function buildAtxConfigUrl(req, token = '') {
+    const suffix = token ? `?key=${encodeURIComponent(String(token))}` : '';
+    return `${requestBaseUrl(req)}/atx/config${suffix}`;
+}
+
+function buildCredentialPayload(req, user) {
+    const token = ensureUserUpdateUuid(user);
+    return {
+        version: 1,
+        token,
+        configUrl: buildAtxConfigUrl(req, token),
+        assetPath: 'assets/config/credential.txt',
+        format: 'plain-text-token'
+    };
+}
+
 function buildUserConfig(req, username, user, publicPrefix = '') {
     const stored = parseUserConfig(user);
     const configUrl = buildPublicResourceUrl(req, username, 'config', publicPrefix);
@@ -167,7 +183,7 @@ function buildUserConfig(req, username, user, publicPrefix = '') {
     };
 }
 
-function buildAtxConfig(req, user) {
+function buildAtxConfig(req, user, token = '') {
     const stored = parseUserConfig(user);
     const theme = (stored.Theme && typeof stored.Theme === 'object') ? stored.Theme : {};
     const servers = Array.isArray(stored.Servers) ? stored.Servers.map((server) => ({
@@ -192,7 +208,7 @@ function buildAtxConfig(req, user) {
     return {
         Version: String(stored.Version ?? '1'),
         UrlContato: String(stored.Contato ?? ''),
-        UrlUpdate: `${requestBaseUrl(req)}/atx/config`,
+        UrlUpdate: buildAtxConfigUrl(req, token),
         Logo: String(theme.ImgLogo ?? ''),
         Fundo: String(theme.ImgFundo ?? ''),
         CheckPop: 'true',
@@ -219,9 +235,19 @@ function publishAtxConfig(req, user) {
 }
 
 app.get('/atx/config', (req, res) => {
+    const credential = String(req.query.key || req.query.token || '').trim();
     const users = listUsers();
+    if (credential) {
+        const user = findUserByUpdateUuid(credential);
+        if (!user) return res.status(404).json({ error: 'Credencial inválida' });
+        const token = ensureUserUpdateUuid(user);
+        return sendDynamicJson(res, buildAtxConfig(req, user, token));
+    }
+    if (users.length > 1) {
+        return res.status(401).json({ error: 'Informe a credencial da conta' });
+    }
     const user = users[0];
-    if (user) return res.type('application/json').send(JSON.stringify(buildAtxConfig(req, user)));
+    if (user) return sendDynamicJson(res, buildAtxConfig(req, user));
     const file = path.join(__dirname, 'public', 'updates', 'atx-config');
     res.type('application/json').sendFile(file);
 });
@@ -803,6 +829,7 @@ app.post('/register', async (req, res) => {
         saveUser(username, {
             id: Date.now(),
             username,
+            displayName: username,
             email,
             password: hash,
             config_json: configJsonStr,
@@ -819,13 +846,15 @@ app.post('/register', async (req, res) => {
 // Perfil do usuÃ¡rio logado
 app.get('/api/profile', requireAuth, (req, res) => {
     const user = getUser(req.user.username);
-    if (!user) return res.status(404).json({ error: 'UsuÃ¡rio nÃ£o encontrado' });
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
     const updateUuid = ensureUserUpdateUuid(user);
     res.json({
         username: user.username,
+        displayName: String(user.displayName || user.username),
         email: user.email || '',
         updateUuid,
         updateUrl: buildUpdateEntryUrl(req, updateUuid),
+        appConfigUrl: buildAtxConfigUrl(req, updateUuid),
         created_at: user.created_at || null,
         plan: user.plan || 'trial',
         expiresAt: user.expiresAt || null,
@@ -836,11 +865,17 @@ app.get('/api/profile', requireAuth, (req, res) => {
 
 app.post('/api/profile', requireAuth, async (req, res) => {
     const user = getUser(req.user.username);
-    if (!user) return res.status(404).json({ error: 'UsuÃ¡rio nÃ£o encontrado' });
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
 
+    const displayName = String(req.body.displayName ?? user.displayName ?? user.username).trim();
     const email = String(req.body.email || '').trim().toLowerCase();
     const currentPassword = String(req.body.currentPassword || '');
     const newPassword = String(req.body.newPassword || '');
+
+    if (!displayName || displayName.length > 60) {
+        return res.status(400).json({ error: 'O nome de exibição deve ter entre 1 e 60 caracteres' });
+    }
+    user.displayName = displayName;
 
     if (email) {
         if (!isValidEmail(email)) {
@@ -873,9 +908,11 @@ app.post('/api/profile', requireAuth, async (req, res) => {
     res.json({
         ok: true,
         username: user.username,
+        displayName: String(user.displayName || user.username),
         email: user.email || '',
         updateUuid,
-        updateUrl: buildUpdateEntryUrl(req, updateUuid)
+        updateUrl: buildUpdateEntryUrl(req, updateUuid),
+        appConfigUrl: buildAtxConfigUrl(req, updateUuid)
     });
 });
 
@@ -887,8 +924,34 @@ app.post('/api/profile/update-uuid/regenerate', requireAuth, (req, res) => {
     res.json({
         ok: true,
         updateUuid: user.updateUuid,
-        updateUrl: buildUpdateEntryUrl(req, user.updateUuid)
+        updateUrl: buildUpdateEntryUrl(req, user.updateUuid),
+        appConfigUrl: buildAtxConfigUrl(req, user.updateUuid)
     });
+});
+
+app.get('/api/profile/credential.json', requireAuth, (req, res) => {
+    const user = getUser(req.user.username);
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+    const credential = buildCredentialPayload(req, user);
+    res.set({
+        'Cache-Control': 'private, no-store, no-cache, max-age=0',
+        'X-Content-Type-Options': 'nosniff',
+        'Content-Disposition': 'attachment; filename="credencial.json"'
+    });
+    return res.type('application/json').send(JSON.stringify(credential, null, 2));
+});
+
+app.get('/api/profile/credential.txt', requireAuth, (req, res) => {
+    const user = getUser(req.user.username);
+    if (!user) return res.status(404).send('Usuário não encontrado');
+    const token = ensureUserUpdateUuid(user);
+    res.set({
+        'Cache-Control': 'private, no-store, no-cache, max-age=0',
+        'X-Content-Type-Options': 'nosniff',
+        'Content-Disposition': 'attachment; filename="credential.txt"',
+        'Content-Type': 'text/plain; charset=utf-8'
+    });
+    return res.send(`${token}\n`);
 });
 
 app.get('/logout', (req, res) => {
@@ -918,13 +981,14 @@ app.get('/dashboard', requireAuth, requireActivePlan, (req, res) => {
     res.render('dashboard', {
         user: {
             ...req.user,
+            displayName: String(user.displayName || user.username),
             email: user.email || '',
             updateUuid,
             created_at: user.created_at || null,
             isAdmin: isAdminUser(user)
         },
         configStr,
-        appUrl: `${hostUrl}/atx/config`,
+        appUrl: buildAtxConfigUrl(req, updateUuid),
         appUpdateUrl: `${hostUrl}/${encodeURIComponent(user.username)}/appupdate`,
         smsUrl: `${hostUrl}/${encodeURIComponent(user.username)}/sms`,
         themeUrl: `${hostUrl}/${encodeURIComponent(user.username)}/theme`,
