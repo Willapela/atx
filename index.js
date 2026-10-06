@@ -159,18 +159,73 @@ function buildCredentialPayload(req, user) {
     };
 }
 
+const SUPPORTED_SERVER_MODES = ['Ssl', 'Direct', 'Proxy', 'Tlsws', 'XHTTP', 'SSH_BHTTP'];
+
+function normalizeBhttpConfig(value) {
+    const source = value && typeof value === 'object' ? value : {};
+    const upload = source.upload && typeof source.upload === 'object' ? source.upload : {};
+    const download = source.download && typeof source.download === 'object' ? source.download : {};
+    const timeouts = source.timeouts && typeof source.timeouts === 'object' ? source.timeouts : {};
+    const integer = (input, fallback, min = 0) => {
+        const n = Number(input);
+        return Number.isFinite(n) && n >= min ? Math.floor(n) : fallback;
+    };
+    return {
+        schema_version: integer(source.schema_version, 1, 1),
+        mode: ['AUTO', 'BHP1', 'BHP2'].includes(String(source.mode || '').toUpperCase()) ? String(source.mode).toUpperCase() : 'AUTO',
+        capability_probe: source.capability_probe === true || source.capability_probe === 'true' || source.capability_probe === 1 || source.capability_probe === '1',
+        upload: {
+            chunk_size: integer(upload.chunk_size, 32768, 1),
+            connections: integer(upload.connections, 16, 1),
+            requests_per_connection: integer(upload.requests_per_connection, 1, 1),
+            max_attempts: integer(upload.max_attempts, 10, 1),
+            retry_backoff_ms: integer(upload.retry_backoff_ms, 150, 0)
+        },
+        download: {
+            chunk_size: integer(download.chunk_size, 30000, 1),
+            connections: integer(download.connections, 32, 1),
+            requests_per_connection: integer(download.requests_per_connection, 1, 1),
+            max_attempts: integer(download.max_attempts, 10, 1),
+            retry_backoff_ms: integer(download.retry_backoff_ms, 150, 0)
+        },
+        timeouts: {
+            dns_ms: integer(timeouts.dns_ms, 5000, 1),
+            connect_ms: integer(timeouts.connect_ms, 15000, 1),
+            read_ms: integer(timeouts.read_ms, 30000, 1),
+            probe_ms: integer(timeouts.probe_ms, 8000, 1),
+            shutdown_ms: integer(timeouts.shutdown_ms, 5000, 1)
+        }
+    };
+}
+
+function normalizeServerMode(value) {
+    const raw = String(value || '').trim();
+    const upper = raw.toUpperCase();
+    if (['SSH_BHTTP', 'BHTTP_SSH', 'BHTTP'].includes(upper)) return 'SSH_BHTTP';
+    return SUPPORTED_SERVER_MODES.includes(raw) ? raw : 'Tlsws';
+}
+
+function buildPublicServer(server) {
+    const clean = {};
+    const serverKeys = ['Name', 'ColorName', 'Description', 'ColorDescription', 'FLAG', 'ServerIP', 'ServerPort', 'CheckUser', 'USER', 'PASS', 'Payload', 'ProxyIP', 'ProxyPort', 'SNI', 'Path', 'Color', 'Info', 'TLSVersion'];
+    serverKeys.forEach((key) => {
+        if (server[key] !== undefined) clean[key] = server[key];
+    });
+    clean.Info = normalizeServerMode(server.Info || server.mode || server.TYPE);
+    if (clean.Info === 'SSH_BHTTP') {
+        clean.mode = 'SSH_BHTTP';
+        clean.dt_protocol = String(server.dt_protocol || 'TCP').toUpperCase();
+        clean.dt_port = String(server.dt_port ?? server.ServerPort ?? '8000');
+        clean.tls_version = String(server.tls_version || server.TLSVersion || 'TLSv1.2');
+        clean.bhttp_config = normalizeBhttpConfig(server.bhttp_config || server.bhttp);
+    }
+    return clean;
+}
+
 function buildUserConfig(req, username, user, publicPrefix = '') {
     const stored = parseUserConfig(user);
     const configUrl = buildPublicResourceUrl(req, username, 'config', publicPrefix);
-    const serverKeys = ['Name', 'ColorName', 'Description', 'ColorDescription', 'FLAG', 'ServerIP', 'ServerPort', 'CheckUser', 'USER', 'PASS', 'Payload', 'ProxyIP', 'ProxyPort', 'SNI', 'Path', 'Color', 'Info'];
-    const servers = Array.isArray(stored.Servers) ? stored.Servers.map((server) => {
-        const clean = {};
-        serverKeys.forEach((key) => {
-            if (server[key] !== undefined) clean[key] = server[key];
-        });
-        if (!['Ssl', 'Direct', 'Proxy', 'Tlsws', 'XHTTP'].includes(clean.Info)) clean.Info = 'Tlsws';
-        return clean;
-    }) : [];
+    const servers = Array.isArray(stored.Servers) ? stored.Servers.map(buildPublicServer) : [];
 
     // O endpoint pÃºblico segue exclusivamente o modelo ATX TUNNEL enviado.
     return {
@@ -186,7 +241,7 @@ function buildUserConfig(req, username, user, publicPrefix = '') {
 function buildAtxConfig(req, user, token = '') {
     const stored = parseUserConfig(user);
     const theme = (stored.Theme && typeof stored.Theme === 'object') ? stored.Theme : {};
-    const servers = Array.isArray(stored.Servers) ? stored.Servers.map((server) => ({
+    const servers = Array.isArray(stored.Servers) ? stored.Servers.map((server) => buildPublicServer({
         Name: String(server.Name ?? ''),
         ColorName: String(server.ColorName ?? '#ffffff'),
         Description: String(server.Description ?? ''),
@@ -202,8 +257,13 @@ function buildAtxConfig(req, user, token = '') {
         ProxyPort: String(server.ProxyPort ?? '443'),
         SNI: String(server.SNI ?? ''),
         Path: String(server.Path ?? ''),
+        TLSVersion: String(server.TLSVersion ?? server.tls_version ?? 'TLSv1.2'),
+        mode: server.mode,
+        dt_protocol: server.dt_protocol,
+        dt_port: server.dt_port,
+        bhttp_config: server.bhttp_config || server.bhttp,
         Color: String(server.Color ?? '#0000ff'),
-        Info: ['Ssl', 'Direct', 'Proxy', 'Tlsws', 'XHTTP'].includes(server.Info) ? server.Info : 'Tlsws'
+        Info: normalizeServerMode(server.Info || server.mode)
     })) : [];
     return {
         Version: String(stored.Version ?? '1'),
@@ -1138,6 +1198,26 @@ function normalizeConfigPayload(nextConfig, currentConfig = null) {
         AppName: 'ATX TUNNEL'
     };
 
+    nextConfig.Servers = Array.isArray(nextConfig.Servers) ? nextConfig.Servers.map((server) => {
+        const item = server && typeof server === 'object' ? { ...server } : {};
+        item.Info = normalizeServerMode(item.Info || item.mode || item.TYPE);
+        item.TLSVersion = String(item.TLSVersion ?? item.tls_version ?? 'TLSv1.2');
+        if (item.Info === 'SSH_BHTTP') {
+            item.mode = 'SSH_BHTTP';
+            item.dt_protocol = String(item.dt_protocol || 'TCP').toUpperCase();
+            item.dt_port = String(item.dt_port ?? item.ServerPort ?? '8000');
+            item.tls_version = String(item.tls_version || item.TLSVersion || 'TLSv1.2');
+            item.bhttp_config = normalizeBhttpConfig(item.bhttp_config || item.bhttp);
+        } else {
+            delete item.mode;
+            delete item.dt_protocol;
+            delete item.dt_port;
+            delete item.tls_version;
+            delete item.bhttp_config;
+        }
+        return item;
+    }) : [];
+
     const allowedRootKeys = ['Version', 'VersionName', 'AppVersion', 'UpdateApk', 'Actualization', 'UdpPort', 'Contato', 'Site', 'WebView', 'Html', 'Theme', 'Servers', 'Sms'];
     Object.keys(nextConfig).forEach((key) => {
         if (!allowedRootKeys.includes(key)) delete nextConfig[key];
@@ -1361,7 +1441,10 @@ function mapImportedMode(mode) {
         PROXY: 'Proxy',
         SSL: 'Ssl',
         TLSWS: 'Tlsws',
-        XHTTP: 'XHTTP'
+        XHTTP: 'XHTTP',
+        SSH_BHTTP: 'SSH_BHTTP',
+        BHTTP_SSH: 'SSH_BHTTP',
+        BHTTP: 'SSH_BHTTP'
     };
     return map[normalized] || 'Direct';
 }
@@ -1381,6 +1464,7 @@ function convertExternalServer(item, index) {
     const server = source.server && typeof source.server === 'object' ? source.server : {};
     const proxy = source.proxy && typeof source.proxy === 'object' ? source.proxy : {};
     const mode = mapImportedMode(source.mode);
+    const sourceBhttp = source.bhttp_config || source.bhttp || {};
     const categoryColor = String(category.color || '#0000ff').replace(/([A-Fa-f0-9]{6})[A-Fa-f0-9]{2}$/, '$1');
 
     return {
@@ -1398,10 +1482,17 @@ function convertExternalServer(item, index) {
         ProxyIP: normalizeImportedList(proxy.host),
         ProxyPort: String(proxy.port ?? '443'),
         SNI: String(payload.sni ?? ''),
-        Path: '',
+        Path: String(source.path || ''),
         TLSVersion: normalizeImportedTls(source.tls_version),
         Color: categoryColor,
-        Info: mode
+        Info: mode,
+        ...(mode === 'SSH_BHTTP' ? {
+            mode: 'SSH_BHTTP',
+            dt_protocol: String(source.dt_protocol || 'TCP').toUpperCase(),
+            dt_port: String(source.dt_port ?? server.port ?? '8000'),
+            tls_version: normalizeImportedTls(source.tls_version),
+            bhttp_config: normalizeBhttpConfig(sourceBhttp)
+        } : {})
     };
 }
 
