@@ -160,6 +160,7 @@ function buildCredentialPayload(req, user) {
 }
 
 const SUPPORTED_SERVER_MODES = ['Ssl', 'Direct', 'Proxy', 'Tlsws', 'XHTTP', 'SSH_BHTTP'];
+const COMPATIBILITY_PAYLOAD = 'GET / HTTP/1.1[lf]Host: [app_host][lf]Connection: keep-alive[lf][lf]';
 
 function normalizeBhttpConfig(value) {
     const source = value && typeof value === 'object' ? value : {};
@@ -212,6 +213,9 @@ function buildPublicServer(server) {
         if (server[key] !== undefined) clean[key] = server[key];
     });
     clean.Info = normalizeServerMode(server.Info || server.mode || server.TYPE);
+    if (['XHTTP', 'SSH_BHTTP'].includes(clean.Info) && !String(clean.Payload || '').trim()) {
+        clean.Payload = COMPATIBILITY_PAYLOAD;
+    }
     if (clean.Info === 'SSH_BHTTP') {
         clean.mode = 'SSH_BHTTP';
         clean.dt_protocol = String(server.dt_protocol || 'TCP').toUpperCase();
