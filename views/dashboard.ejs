@@ -73,26 +73,29 @@
                 <div class="nav-item" :class="{active: activeMenu === 'dashboard'}" @click="setMenu('dashboard')">
                     <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19V5M4 19h16M8 16v-5M12 16V7M16 16v-8M20 16v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Visão Geral</span>
                 </div>
-                <div class="nav-item" :class="{active: activeMenu === 'general'}" @click="setMenu('general')">
-                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6Z" stroke="currentColor" stroke-width="1.8"/><path d="m19.3 13.5 1.1.8-1.7 2.9-1.3-.5a7.8 7.8 0 0 1-1.8 1l-.2 1.4h-3.4l-.2-1.4a7.8 7.8 0 0 1-1.8-1l-1.3.5-1.7-2.9 1.1-.8a7.2 7.2 0 0 1 0-2.1l-1.1-.8 1.7-2.9 1.3.5a7.8 7.8 0 0 1 1.8-1l.2-1.4h3.4l.2 1.4a7.8 7.8 0 0 1 1.8 1l1.3-.5 1.7 2.9-1.1.8a7.2 7.2 0 0 1 0 2.1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></span><span>Configurações Gerais</span>
+                <div class="nav-item" :class="{active: activeMenu === 'servers'}" @click="setMenu('servers')">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="11" rx="1.8" stroke="currentColor" stroke-width="1.8"/><path d="M8 20h8M12 16v4M8 9h.01M11 9h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><span>Operadora</span>
                 </div>
                 <div class="nav-item" :class="{active: activeMenu === 'layout'}" @click="setMenu('layout')">
-                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4.2a7.8 7.8 0 1 0 0 15.6h1.2a1.9 1.9 0 0 0 0-3.8h-.8a1.8 1.8 0 0 1 0-3.6h2.8a5.6 5.6 0 0 0 5.6-5.6A7.8 7.8 0 0 0 12 4.2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="7.8" cy="10" r=".8" fill="currentColor"/><circle cx="10.3" cy="7.2" r=".8" fill="currentColor"/><circle cx="14" cy="7" r=".8" fill="currentColor"/></svg></span><span>Layout e Cores</span>
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4.2a7.8 7.8 0 1 0 0 15.6h1.2a1.9 1.9 0 0 0 0-3.8h-.8a1.8 1.8 0 0 1 0-3.6h2.8a5.6 5.6 0 0 0 5.6-5.6A7.8 7.8 0 0 0 12 4.2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="7.8" cy="10" r=".8" fill="currentColor"/><circle cx="10.3" cy="7.2" r=".8" fill="currentColor"/><circle cx="14" cy="7" r=".8" fill="currentColor"/></svg></span><span>Layout</span>
                 </div>
-                <div class="nav-item" :class="{active: activeMenu === 'servers'}" @click="setMenu('servers')">
-                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="11" rx="1.8" stroke="currentColor" stroke-width="1.8"/><path d="M8 20h8M12 16v4M8 9h.01M11 9h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><span>Servidores</span>
+                <div class="nav-item" :class="{active: activeMenu === 'contribute'}" @click="setMenu('contribute')">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span><span>Contribuir</span>
                 </div>
                 <div class="nav-item" :class="{active: activeMenu === 'profile'}" @click="setMenu('profile')">
-                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 19.2a6.5 6.5 0 0 1 13 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><span>Meu Perfil</span>
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 19.2a6.5 6.5 0 0 1 13 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><span>Perfil</span>
+                </div>
+                <div class="nav-item" :class="{active: activeMenu === 'general'}" @click="setMenu('general')">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6Z" stroke="currentColor" stroke-width="1.8"/><path d="m19.3 13.5 1.1.8-1.7 2.9-1.3-.5a7.8 7.8 0 0 1-1.8 1l-.2 1.4h-3.4l-.2-1.4a7.8 7.8 0 0 1-1.8-1l-1.3.5-1.7-2.9 1.1-.8a7.2 7.2 0 0 1 0-2.1l-1.1-.8 1.7-2.9 1.3.5a7.8 7.8 0 0 1 1.8-1l.2-1.4h3.4l.2 1.4a7.8 7.8 0 0 1 1.8 1l1.3-.5 1.7 2.9-1.1.8a7.2 7.2 0 0 1 0 2.1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></span><span>Ferramentas</span>
                 </div>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-profile" style="cursor:pointer;" @click="setMenu('profile')">
                     <div class="avatar"><%= user.username.charAt(0).toUpperCase() %></div>
                     <div>
-                        <div style="font-weight: 600; color: var(--text-primary);"><%= user.username %></div>
+                        <div style="font-weight: 600; color: var(--text-primary);"><%= user.displayName || user.username %></div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">@<%= user.username %></div>
                         <div style="font-size: 0.8rem; color: var(--text-muted);"><%= user.email || 'Sem e-mail' %></div>
-                        <div style="font-size: 0.68rem; color: #1d4ed8; margin-top: .25rem; word-break: break-all;" title="UUID de atualização">UUID: <%= user.updateUuid %></div>
                     </div>
                 </div>
                 <a href="/logout" class="btn danger full-width small" style="margin-top: 0.5rem;">Sair</a>
@@ -111,12 +114,12 @@
                 
                 <div class="glass-container config-card" style="margin-bottom: 2rem;">
                     <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Endpoint de configuração ATX</h3>
-                    <p class="text-muted" style="margin-bottom: 1rem;">Use esta única URL no ATX TUNNEL para buscar servidores, tema e configurações publicadas.</p>
+                    <p class="text-muted" style="margin-bottom: 1rem;">URL individual desta conta. O token identifica qual configuração de Operadora e Layout o ATX TUNNEL deve carregar.</p>
                     <div class="url-box" style="margin-bottom: .75rem;">
                         <input type="text" readonly value="<%= appUrl %>" id="atxConfigUrl">
                         <button onclick="copySpecificUrl('atxConfigUrl')" class="btn secondary">Copiar URL</button>
                     </div>
-                    <p class="text-muted" style="margin: .5rem 0 0;">A URL permanece estável; as alterações feitas no painel aparecem no próximo carregamento do app.</p>
+                    <p class="text-muted" style="margin: .5rem 0 0;">A URL permanece estável enquanto o token não for regenerado. A APK precisa apontar para o domínio deste painel; trocar o painel não altera sozinha a URL que já está gravada dentro do app.</p>
                 </div>
 
                 <div class="overview-status-grid">
@@ -148,8 +151,8 @@
             <!-- General Section -->
             <div v-show="activeMenu === 'general'">
                 <div class="page-header">
-                    <div class="eyebrow">CONFIGURAÇÃO GLOBAL</div><h1 class="page-title">Configurações Gerais</h1>
-                    <p class="text-muted">Configurações globais do aplicativo.</p>
+                    <div class="eyebrow">FERRAMENTAS DO APLICATIVO</div><h1 class="page-title">Ferramentas</h1>
+                    <p class="text-muted">Atualização do APK, parâmetros globais, importação e publicação.</p>
                 </div>
                 
                 <div class="glass-container config-card">
@@ -295,7 +298,7 @@
     <div class="page-header servers-header">
         <div>
             <div class="eyebrow">ATX TUNNEL</div>
-            <h1 class="page-title">Servidores</h1>
+            <h1 class="page-title">Operadora</h1>
             <p class="text-muted">
                 {{ config.Servers.length }} servidor{{ config.Servers.length === 1 ? '' : 'es' }} configurado{{ config.Servers.length === 1 ? '' : 's' }}
             </p>
@@ -387,53 +390,93 @@
         Os servidores são salvos junto com as demais alterações pelo botão <strong>Salvar alterações</strong> na barra inferior.
     </p>
 </div>
-            <!-- Profile Section -->
+
+            <!-- Contribution section -->
+            <div v-show="activeMenu === 'contribute'">
+                <div class="page-header">
+                    <div class="eyebrow">CANAIS DO PROJETO</div>
+                    <h1 class="page-title">Contribuir</h1>
+                    <p class="text-muted">Acesse os canais que você configurou para apoiar ou divulgar seu projeto.</p>
+                </div>
+                <div class="glass-container config-card">
+                    <h3 class="section-title" style="margin-top:0;">Links publicados no aplicativo</h3>
+                    <p class="text-muted">Os links abaixo vêm das configurações desta conta; nenhum endereço de contribuição é inventado pelo painel.</p>
+                    <div style="display:flex; gap:.75rem; flex-wrap:wrap; margin-top:1rem;">
+                        <a v-if="config.Site" class="btn primary" :href="config.Site" target="_blank" rel="noopener noreferrer">Abrir link de contribuição</a>
+                        <a v-if="config.Contato" class="btn secondary" :href="config.Contato" target="_blank" rel="noopener noreferrer">Abrir contato / suporte</a>
+                        <button v-if="!config.Site && !config.Contato" type="button" class="btn secondary" @click="setMenu('general')">Configurar links em Ferramentas</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile section -->
             <div v-show="activeMenu === 'profile'">
                 <div class="page-header">
-                    <div class="eyebrow">CONTA</div>
-                    <h1 class="page-title">Meu Perfil</h1>
-                    <p class="text-muted">Gerencie e-mail e senha da sua conta.</p>
+                    <div class="eyebrow">CONTA E INTEGRAÇÃO</div>
+                    <h1 class="page-title">Perfil</h1>
+                    <p class="text-muted">Atualize seus dados e gere a credencial individual do ATX TUNNEL.</p>
                 </div>
 
                 <div class="glass-container config-card">
+                    <h3 class="section-title" style="margin-top:0;">Dados da conta</h3>
                     <div class="card-grid form-grid-2">
                         <div class="form-group">
-                            <label>Usuário</label>
+                            <label>Nome de exibição</label>
+                            <input type="text" v-model="profile.displayName" maxlength="60" placeholder="Seu nome">
+                        </div>
+                        <div class="form-group">
+                            <label>Login</label>
                             <input type="text" :value="profile.username" readonly style="background-color: #f4f5f7; color: #6b7480; cursor: not-allowed;">
-                            <small class="text-muted">O usuário não pode ser alterado (faz parte da URL da config).</small>
+                            <small class="text-muted">O login permanece fixo para não quebrar as URLs existentes.</small>
                         </div>
                         <div class="form-group">
                             <label>E-mail</label>
                             <input type="email" v-model="profile.email" placeholder="voce@email.com">
                         </div>
-                        <div class="form-group full-width">
-                            <label>UUID de atualização</label>
-                            <div class="url-box">
-                                <input type="text" :value="profile.updateUuid" id="profileUpdateUuid" readonly style="background-color: #f4f5f7; color: #6b7480; cursor: not-allowed;">
-                                <button type="button" class="btn secondary" onclick="copySpecificUrl('profileUpdateUuid')">Copiar</button>
-                            </div>
-                            <small class="text-muted">Use este UUID no aplicativo para resolver todas as atualizações deste painel. Regenerar invalida o UUID anterior.</small>
-                            <div style="margin-top:.65rem;">
-                                <button type="button" class="btn danger small" :disabled="profileSaving" @click="regenerateUpdateUuid">Gerar novo UUID</button>
-                            </div>
-                        </div>
                         <div class="form-group">
                             <label>Senha atual</label>
                             <input type="password" v-model="profile.currentPassword" placeholder="••••••••" autocomplete="current-password">
-                            <small class="text-muted">Obrigatória só se for trocar a senha.</small>
+                            <small class="text-muted">Obrigatória somente para trocar a senha.</small>
                         </div>
                         <div class="form-group">
                             <label>Nova senha</label>
                             <input type="password" v-model="profile.newPassword" placeholder="••••••••" autocomplete="new-password">
-                            <small class="text-muted">Mínimo 6 caracteres. Deixe em branco para não alterar.</small>
+                            <small class="text-muted">Mínimo de 6 caracteres; deixe vazio para manter.</small>
                         </div>
                     </div>
-                    <div style="margin-top: 1rem; display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
-                        <button class="btn primary" :disabled="profileSaving" @click="saveProfile">
-                            {{ profileSaving ? 'Salvando...' : 'Salvar perfil' }}
-                        </button>
+                    <div style="margin-top:1rem; display:flex; gap:.75rem; flex-wrap:wrap; align-items:center;">
+                        <button class="btn primary" :disabled="profileSaving" @click="saveProfile">{{ profileSaving ? 'Salvando...' : 'Salvar perfil' }}</button>
                         <span v-if="profileMsg" style="color:#059669; font-weight:600;">{{ profileMsg }}</span>
                         <span v-if="profileError" style="color:#dc2626; font-weight:600;">{{ profileError }}</span>
+                    </div>
+                </div>
+
+                <div class="glass-container config-card" style="margin-top:1.25rem;">
+                    <h3 class="section-title" style="margin-top:0;">Credencial do aplicativo</h3>
+                    <p class="text-muted">O token individual seleciona a configuração desta conta. Guarde os arquivos com cuidado; regenerar o token invalida o anterior.</p>
+                    <div class="card-grid form-grid-2">
+                        <div class="form-group full-width">
+                            <label>Token / UUID</label>
+                            <div class="url-box">
+                                <input type="text" :value="profile.updateUuid" id="profileUpdateUuid" readonly>
+                                <button type="button" class="btn secondary" onclick="copySpecificUrl('profileUpdateUuid')">Copiar</button>
+                            </div>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Endpoint da configuração desta conta</label>
+                            <div class="url-box">
+                                <input type="text" :value="profile.appConfigUrl" id="profileAppConfigUrl" readonly>
+                                <button type="button" class="btn secondary" onclick="copySpecificUrl('profileAppConfigUrl')">Copiar URL</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:.75rem; flex-wrap:wrap; margin-top:1rem;">
+                        <a class="btn primary" href="/api/profile/credential.json">Gerar arquivo credencial.json</a>
+                        <a class="btn secondary" href="/api/profile/credential.txt">Baixar credential.txt para esta APK</a>
+                        <button type="button" class="btn danger small" :disabled="profileSaving" @click="regenerateUpdateUuid">Gerar novo token</button>
+                    </div>
+                    <div class="text-muted" style="margin-top:1rem; line-height:1.55;">
+                        <strong>Compatibilidade da base leve:</strong> o APK atual lê <code>assets/config/credential.txt</code> como uma linha de texto. O JSON é o manifesto exportável do painel; para a base atual, use o TXT. O APK também precisa apontar para o domínio deste painel — trocar apenas o painel não substitui a URL que já está gravada dentro do app.
                     </div>
                 </div>
             </div>
@@ -642,7 +685,7 @@
                 if (initialConfig.Layout) delete initialConfig.Layout;
                 
                 return {
-                    activeMenu: ['dashboard','general','layout','servers','profile'].includes(localStorage.getItem('activeMenu')) ? localStorage.getItem('activeMenu') : 'dashboard',
+                    activeMenu: ['dashboard','general','layout','contribute','servers','profile'].includes(localStorage.getItem('activeMenu')) ? localStorage.getItem('activeMenu') : 'dashboard',
                     connectionModes: [
                         'Ssl', 'Direct', 'Proxy', 'Tlsws', 'XHTTP'
                     ],
@@ -665,9 +708,11 @@
                     apkUploadError: '',
                     profile: {
                         username: '<%= user.username %>',
+                        displayName: '',
                         email: '<%= user.email || "" %>',
                         updateUuid: '<%= user.updateUuid || "" %>',
                         updateUrl: '<%= updateUrl %>',
+                        appConfigUrl: '',
                         createdAt: '<%= user.created_at || "" %>',
                         isAdmin: <%= user.isAdmin ? 'true' : 'false' %>,
                         currentPassword: '',
@@ -722,9 +767,11 @@
                         const data = await response.json();
                         if (!response.ok) return;
                         this.profile.username = data.username || this.profile.username;
+                        this.profile.displayName = data.displayName || this.profile.displayName || this.profile.username;
                         this.profile.email = data.email || '';
                         this.profile.updateUuid = data.updateUuid || this.profile.updateUuid;
                         this.profile.updateUrl = data.updateUrl || this.profile.updateUrl;
+                        this.profile.appConfigUrl = data.appConfigUrl || this.profile.appConfigUrl;
                         this.profile.createdAt = data.created_at || this.profile.createdAt || '';
                         this.profile.isAdmin = !!data.isAdmin;
                     } catch (e) { /* ignore */ }
@@ -743,6 +790,7 @@
                         if (!response.ok) throw new Error(data.error || 'Falha ao gerar novo UUID');
                         this.profile.updateUuid = data.updateUuid || '';
                         this.profile.updateUrl = data.updateUrl || '';
+                        this.profile.appConfigUrl = data.appConfigUrl || '';
                         this.profileMsg = '✅ Novo UUID gerado!';
                         setTimeout(() => { this.profileMsg = ''; }, 3500);
                     } catch (err) {
@@ -760,6 +808,7 @@
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                             body: JSON.stringify({
+                                displayName: this.profile.displayName,
                                 email: this.profile.email,
                                 currentPassword: this.profile.currentPassword,
                                 newPassword: this.profile.newPassword
@@ -769,6 +818,7 @@
                         if (!response.ok) {
                             throw new Error(data.error || 'Falha ao salvar perfil');
                         }
+                        this.profile.displayName = data.displayName || this.profile.displayName;
                         this.profile.email = data.email || this.profile.email;
                         this.profile.currentPassword = '';
                         this.profile.newPassword = '';
@@ -955,12 +1005,8 @@
                     this.modal.isOpen = false;
                 },
                 onConnectionModeChange() {
-                    const server = this.config.Servers[this.modal.index];
-                    if (!server) return;
-                    if (server.Info === 'XHTTP') {
-                        server.Payload = '';
-                        if (server.ProxyPort === '443') server.ProxyPort = '';
-                    }
+                    // Preserva Payload e porta ao alternar modos; a troca de
+                    // transporte não deve apagar dados que o usuário já salvou.
                 },
                 addServer() {
                     this.config.Servers.push({
