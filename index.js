@@ -213,11 +213,18 @@ function buildPublicServer(server) {
         if (server[key] !== undefined) clean[key] = server[key];
     });
     clean.Info = normalizeServerMode(server.Info || server.mode || server.TYPE);
-    if (['XHTTP', 'SSH_BHTTP'].includes(clean.Info) && !String(clean.Payload || '').trim()) {
+    if (clean.Info === 'XHTTP' && !String(clean.Payload || '').trim()) {
         clean.Payload = COMPATIBILITY_PAYLOAD;
     }
     if (clean.Info === 'SSH_BHTTP') {
         clean.mode = 'SSH_BHTTP';
+        // O ATX antigo valida ProxyIP/ProxyPort antes de entrar no transporte
+        // BHTTP. No BP eles não são um proxy HTTP; repetimos o endpoint
+        // público apenas para satisfazer essa validação legada.
+        clean.ProxyIP = String(clean.ServerIP || '').trim();
+        clean.ProxyPort = String(clean.ServerPort || '80').trim();
+        // BP/BHTTP não usa payload HTTP tradicional.
+        clean.Payload = '';
         clean.dt_protocol = String(server.dt_protocol || 'TCP').toUpperCase();
         clean.dt_port = String(server.dt_port ?? server.ServerPort ?? '8000');
         clean.tls_version = String(server.tls_version || server.TLSVersion || 'TLSv1.2');
@@ -1208,6 +1215,9 @@ function normalizeConfigPayload(nextConfig, currentConfig = null) {
         item.TLSVersion = String(item.TLSVersion ?? item.tls_version ?? 'TLSv1.2');
         if (item.Info === 'SSH_BHTTP') {
             item.mode = 'SSH_BHTTP';
+            item.ProxyIP = String(item.ServerIP || '').trim();
+            item.ProxyPort = String(item.ServerPort || '80').trim();
+            item.Payload = '';
             item.dt_protocol = String(item.dt_protocol || 'TCP').toUpperCase();
             item.dt_port = String(item.dt_port ?? item.ServerPort ?? '8000');
             item.tls_version = String(item.tls_version || item.TLSVersion || 'TLSv1.2');
@@ -1492,6 +1502,10 @@ function convertExternalServer(item, index) {
         Info: mode,
         ...(mode === 'SSH_BHTTP' ? {
             mode: 'SSH_BHTTP',
+            // Compatibilidade com a validação legada do ATX; não é um proxy HTTP.
+            Payload: '',
+            ProxyIP: normalizeImportedList(proxy.host) || normalizeImportedList(server.host),
+            ProxyPort: String(proxy.port ?? server.port ?? '80'),
             dt_protocol: String(source.dt_protocol || 'TCP').toUpperCase(),
             dt_port: String(source.dt_port ?? server.port ?? '8000'),
             tls_version: normalizeImportedTls(source.tls_version),
