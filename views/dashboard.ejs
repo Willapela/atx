@@ -538,19 +538,14 @@
                             </div>
                             <div v-if="config.Servers[modal.index].Info === 'SSH_BHTTP'" class="form-group grid-col-2">
                                 <div>
-                                    <label>Modo BHTTP</label>
-                                    <select v-model="config.Servers[modal.index].bhttp_config.mode">
-                                        <option value="AUTO">AUTO</option>
-                                        <option value="BHP1">BHP1</option>
-                                        <option value="BHP2">BHP2</option>
-                                    </select>
+                                    <label>Protocolo BHTTP</label>
+                                    <input value="BP padrão (DragonTCP)" readonly>
+                                    <small class="field-help">O ATX usa o framing BP/DOP1; BHP1/BHP2 não se aplicam a este cliente.</small>
                                 </div>
                                 <div>
                                     <label>Capability probe</label>
-                                    <select v-model="config.Servers[modal.index].bhttp_config.capability_probe">
-                                        <option :value="false">Desativado (BHP1)</option>
-                                        <option :value="true">Ativado (BHP2)</option>
-                                    </select>
+                                    <input value="Não usado no BP padrão" readonly>
+                                    <small class="field-help">O cliente ATX não envia probe BHP1/BHP2.</small>
                                 </div>
                             </div>
                             <div v-if="config.Servers[modal.index].Info === 'SSH_BHTTP'" class="form-group grid-col-2">
@@ -589,7 +584,7 @@
                                 <div class="grid-col-full">
                                     <label>Payload</label>
                                     <textarea v-model="config.Servers[modal.index].Payload" placeholder="GET /app8 HTTP/1.1[lf]Host: dominio.com[lf]Upgrade: websocket[lf][lf]"></textarea>
-                                    <small class="text-muted">Use [lf] para quebra de linha. O app usa exatamente o texto informado.</small>
+                                    <small class="text-muted">No BHTTP este campo não é usado; o painel publica Payload vazio automaticamente.</small>
                                 </div>
                             </div>
                             <div v-if="['Proxy','Tlsws','XHTTP'].includes(config.Servers[modal.index].Info)" class="form-group grid-col-2">
